@@ -6,11 +6,9 @@ struct SideStripView: View {
     @EnvironmentObject var remindersService: RemindersService
     @EnvironmentObject var timerService: TimerService
     @EnvironmentObject var estimateStore: EstimateStore
+    @EnvironmentObject var windowCoordinator: AppWindowCoordinator
     @Environment(\.openWindow) var openWindow
-    @Environment(\.openSettings) var openSettings
     
-    @State private var hoveredTaskId: String?
-    @State private var editingTaskId: String?
     @State private var isHoveringActiveTask: Bool = false
     @State private var draggedReminder: EKReminder? // Track visually dragged item
     @State private var isCompletingActive = false
@@ -19,13 +17,13 @@ struct SideStripView: View {
     @State private var settingsStore = SettingsStore() // Local instance for embedded view
     @State private var isHoveringFocusButton = false // Focus Button Hover State
     
-    // Sort order persistence
-    private let currentSortOrderKey = "reminderSortOrder"
-    
     // Quick Add State
     @State private var newTaskTitle = ""
     @State private var isPulsing = false // For task alert animation
     @AppStorage("appTheme") private var appTheme: AppTheme = .glass
+    
+    private let completionCommitDelay: TimeInterval = 0.18
+    private let completionAnimation = Animation.interactiveSpring(response: 0.22, dampingFraction: 0.8, blendDuration: 0.1)
     
     var body: some View {
         ZStack {
@@ -72,38 +70,64 @@ struct SideStripView: View {
                 }
             }
         }
+        .background(MainWindowAccessor(windowCoordinator: windowCoordinator))
         .preferredColorScheme(.dark)
         .frame(minWidth: 300, maxWidth: 350, maxHeight: .infinity)
+        .onAppear {
+            prewarmPillWindowIfNeeded()
+        }
         .onChange(of: timerService.isFocusMode) { _, isFocus in
             if isFocus {
-                // Enter Focus: Cross-fade (Main OUT, Pill IN)
-                openWindow(id: "timer-pill") // Start creation immediately
-                
-                // Robust Window Lookup: Title contains "Reminder" or is NOT "Timer"
-                if let mainWindow = NSApp.windows.first(where: { $0.title.contains("Reminder") }) ?? NSApp.windows.first(where: { $0.title != "Timer" && $0.isVisible }) {
-                    NSAnimationContext.runAnimationGroup { context in
-                        context.duration = 0.3
-                        context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                        mainWindow.animator().alphaValue = 0
-                    } completionHandler: {
-                        mainWindow.orderOut(nil)
-                        mainWindow.alphaValue = 1
-                    }
+                // Enter Focus: show/reuse pill first, then hide main window.
+                if windowCoordinator.pillWindow == nil,
+                   let existingPill = NSApp.windows.first(where: { $0.identifier == AppWindowCoordinator.pillWindowIdentifier }) {
+                    windowCoordinator.pillWindow = existingPill
                 }
                 
-                // Poll for Pill Window to animate it IN simultaneously
+                if windowCoordinator.pillWindow == nil {
+                    openWindow(id: "timer-pill")
+                }
+                
+                // Poll for Pill Window and animate the transition only when it is ready.
                 func animatePillIn(attempts: Int = 0) {
-                    if let pillWindow = NSApp.windows.first(where: { $0.title == "Timer" }) {
-                        pillWindow.alphaValue = 0
-                        pillWindow.makeKeyAndOrderFront(nil)
-                        NSAnimationContext.runAnimationGroup { context in
-                            context.duration = 0.3
-                            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                            pillWindow.animator().alphaValue = 1
-                        }
-                    } else if attempts < 10 {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            animatePillIn(attempts: attempts + 1)
+                    Task { @MainActor in
+                        if let pillWindow = windowCoordinator.pillWindow {
+                            // Ensure window chrome is stripped before first visible frame.
+                            pillWindow.isOpaque = false
+                            pillWindow.backgroundColor = .clear
+                            pillWindow.identifier = AppWindowCoordinator.pillWindowIdentifier
+                            pillWindow.titleVisibility = .hidden
+                            pillWindow.titlebarAppearsTransparent = true
+                            pillWindow.styleMask = [.borderless, .fullSizeContentView]
+                            pillWindow.standardWindowButton(.closeButton)?.isHidden = true
+                            pillWindow.standardWindowButton(.miniaturizeButton)?.isHidden = true
+                            pillWindow.standardWindowButton(.zoomButton)?.isHidden = true
+                            pillWindow.level = .floating
+                            pillWindow.isMovableByWindowBackground = true
+                            
+                            pillWindow.alphaValue = 0
+                            pillWindow.makeKeyAndOrderFront(nil)
+                            NSAnimationContext.runAnimationGroup { context in
+                                context.duration = 0.3
+                                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                                pillWindow.animator().alphaValue = 1
+                            }
+                            
+                            let windowsToHide = NSApp.windows.filter { $0 !== pillWindow && $0.isVisible }
+                            windowsToHide.forEach { window in
+                                NSAnimationContext.runAnimationGroup { context in
+                                    context.duration = 0.2
+                                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                                    window.animator().alphaValue = 0
+                                } completionHandler: {
+                                    window.orderOut(nil)
+                                    window.alphaValue = 1
+                                }
+                            }
+                        } else if attempts < 20 {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                animatePillIn(attempts: attempts + 1)
+                            }
                         }
                     }
                 }
@@ -111,12 +135,12 @@ struct SideStripView: View {
                 
             } else {
                 // Exit Focus: Cross-fade (Pill OUT, Main IN)
-                let pillWindows = NSApp.windows.filter { $0.title == "Timer" }
-                // Robust Lookup
-                let mainWindow = NSApp.windows.first(where: { $0.title.contains("Reminder") }) ?? NSApp.windows.first(where: { $0.title != "Timer" && !$0.isVisible })
+                let pillWindow = windowCoordinator.pillWindow ?? NSApp.windows.first(where: { $0.identifier == AppWindowCoordinator.pillWindowIdentifier })
+                let mainWindow = windowCoordinator.mainWindow ?? NSApp.windows.first(where: { $0.identifier == AppWindowCoordinator.mainWindowIdentifier })
                 
                 // Prepare Main Window
                 if let main = mainWindow {
+                    windowCoordinator.mainWindow = main
                     main.alphaValue = 0
                     main.makeKeyAndOrderFront(nil)
                     main.setIsVisible(true)
@@ -128,13 +152,16 @@ struct SideStripView: View {
                     context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
                     
                     // Animate Pill OUT
-                    pillWindows.forEach { $0.animator().alphaValue = 0 }
+                    pillWindow?.animator().alphaValue = 0
                     
                     // Animate Main IN
                     mainWindow?.animator().alphaValue = 1
                     
                 } completionHandler: {
-                    pillWindows.forEach { $0.close() }
+                    // Keep the same pill window instance and just hide it; this avoids
+                    // titlebar/chrome glitches when a brand-new window is recreated.
+                    pillWindow?.orderOut(nil)
+                    pillWindow?.alphaValue = 1
                 }
             }
         }
@@ -144,6 +171,30 @@ struct SideStripView: View {
                 timerService.isFocusMode = false
             }
         }
+    }
+    
+    private func prewarmPillWindowIfNeeded() {
+        guard !windowCoordinator.hasPrewarmedPillWindow else { return }
+        windowCoordinator.hasPrewarmedPillWindow = true
+        
+        openWindow(id: "timer-pill")
+        
+        func waitForPillWindow(attempts: Int = 0) {
+            Task { @MainActor in
+                if let pillWindow = windowCoordinator.pillWindow {
+                    // Keep the prewarmed instance hidden until focus mode is enabled.
+                    if !timerService.isFocusMode {
+                        pillWindow.orderOut(nil)
+                    }
+                } else if attempts < 30 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        waitForPillWindow(attempts: attempts + 1)
+                    }
+                }
+            }
+        }
+        
+        waitForPillWindow()
     }
     
     var headerView: some View {
@@ -179,8 +230,8 @@ struct SideStripView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Text(remindersService.activeListId == nil ? "Today" : (remindersService.lists.first(where: { $0.calendarIdentifier == remindersService.activeListId })?.title ?? "List"))
-                            .font(.title2)
-                            .fontWeight(.bold)
+                            .font(.custom("Times New Roman", size: 28))
+                            .italic()
                             .foregroundColor(.primary)
                     }
                 }
@@ -245,8 +296,9 @@ struct SideStripView: View {
                         }
                     )
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical)
+        .padding(.horizontal, 15)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
 
     }
     
@@ -424,9 +476,10 @@ struct SideStripView: View {
                                     
                                     // 3. Complete (Green Traffic Light)
                                     Button(action: {
-                                        withAnimation { isCompletingActive = true }
+                                        guard !isCompletingActive else { return }
+                                        withAnimation(completionAnimation) { isCompletingActive = true }
                                         NSSound(named: "Glass")?.play()
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + completionCommitDelay) {
                                             remindersService.toggleComplete(activeTask)
                                             timerService.stopTimer()
                                             isCompletingActive = false
@@ -601,6 +654,7 @@ struct SideStripView: View {
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
+                    .padding(.bottom, 6)
                 
                 ForEach(remindersService.recentCompletedReminders) { reminder in
                     ReminderRowView(reminder: reminder)
@@ -636,11 +690,11 @@ struct SideStripView: View {
         .background(
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.black.opacity(0.3))
+                    .fill(Color.black.opacity(appTheme == .glass ? 0.16 : 0.3))
                 
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.thinMaterial)
-                    .opacity(0.3)
+                    .opacity(appTheme == .glass ? 0.45 : 0.3)
             }
         )
         .overlay(
@@ -685,7 +739,12 @@ struct SideStripView: View {
                                 .fill(.thinMaterial)
                             
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.black.opacity(0.4)) // Lighter dark theme
+                                .fill(Color.black.opacity(appTheme == .glass ? 0.22 : 0.4))
+                            
+                            if appTheme == .glass {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.08))
+                            }
                         }
                     )
                     .shadow(color: isHoveringFocusButton ? Color.white.opacity(0.4) : Color.clear, radius: 10, x: 0, y: 0) // White Glow
@@ -715,6 +774,28 @@ struct SideStripView: View {
                 .padding(.horizontal, 7)
             }
             .padding(.vertical, 12)
+        }
+    }
+}
+
+private struct MainWindowAccessor: NSViewRepresentable {
+    let windowCoordinator: AppWindowCoordinator
+    
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            view.window?.identifier = AppWindowCoordinator.mainWindowIdentifier
+            windowCoordinator.mainWindow = view.window
+        }
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if windowCoordinator.mainWindow == nil {
+            DispatchQueue.main.async {
+                nsView.window?.identifier = AppWindowCoordinator.mainWindowIdentifier
+                windowCoordinator.mainWindow = nsView.window
+            }
         }
     }
 }

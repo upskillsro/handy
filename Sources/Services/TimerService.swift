@@ -3,7 +3,7 @@ import Combine
 import SwiftUI
 import UserNotifications
 
-enum TimerState {
+enum TimerState: Equatable {
     case stopped
     case running
     case paused
@@ -58,17 +58,26 @@ class TimerService: ObservableObject {
     private var lastTick: Date?
     
     init() {
+        let env = ProcessInfo.processInfo.environment
+        let args = ProcessInfo.processInfo.arguments.joined(separator: " ")
+        let isRunningTests =
+            env["XCTestConfigurationFilePath"] != nil ||
+            NSClassFromString("XCTestCase") != nil ||
+            args.contains("xctest")
+        
         // Request Notification Perms once on launch
-        if Bundle.main.bundleIdentifier != nil {
+        if !isRunningTests, Bundle.main.bundleIdentifier != nil {
             UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { success, error in
                 if let error = error {
-                    print("Notification auth error: \(error.localizedDescription)")
+                    AppLogger.timer.error("Notification auth error: \(error.localizedDescription, privacy: .public)")
                 }
             }
         }
     }
     
     func startTimer(reminderId: String, duration: TimeInterval) {
+        guard duration >= 0 else { return }
+        
         // Stop any break or previous timer
         stopTimer()
         
@@ -112,6 +121,8 @@ class TimerService: ObservableObject {
         startTicker()
     }
     func startBreak(duration: TimeInterval? = nil) { // Default from settings
+        guard state != .stopped || activeReminderId != nil else { return }
+        
         let breakLen = duration ?? settings.breakDuration
         if let activeId = activeReminderId {
             flushTimeSpent() // Save progress before break
@@ -119,7 +130,7 @@ class TimerService: ObservableObject {
         }
         
         // Transition directly to break
-        timer?.cancel()
+        cancelTicker()
         
         isOnBreak = true
         activeReminderId = nil
@@ -149,6 +160,7 @@ class TimerService: ObservableObject {
     }
     
     func startOvertime() {
+        guard state == .paused, activeReminderId != nil, !isOnBreak else { return }
         timesUpTriggered = false
         isOvertime = true
         state = .running
@@ -159,8 +171,7 @@ class TimerService: ObservableObject {
         guard state == .running else { return }
         flushTimeSpent()
         state = .paused
-        timer?.cancel()
-        timer = nil
+        cancelTicker()
         lastTick = nil
     }
     
@@ -183,8 +194,7 @@ class TimerService: ObservableObject {
         savedTaskState = nil // Clear saved state on manual stop
         accumulatedTime = 0
         timeSinceLastAlert = 0
-        timer?.cancel()
-        timer = nil
+        cancelTicker()
         lastTick = nil
         remainingTime = 0
     }
@@ -197,8 +207,7 @@ class TimerService: ObservableObject {
 
     private func startTicker() {
         lastTick = Date()
-        
-        lastTick = Date()
+        cancelTicker()
         
         timer = Timer.publish(every: 1, on: .main, in: .common)
             .autoconnect()
@@ -280,8 +289,7 @@ class TimerService: ObservableObject {
         
         // Trigger Time's Up State for tasks
         timesUpTriggered = true
-        timer?.cancel()
-        timer = nil
+        cancelTicker()
         state = .paused
         // Play Sound
         // Play Sound
@@ -312,6 +320,11 @@ class TimerService: ObservableObject {
         
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
+    }
+    
+    private func cancelTicker() {
+        timer?.cancel()
+        timer = nil
     }
     
     // Helper format - Now static or using ticker if available, but for compatibility acts on current remainingTime

@@ -11,14 +11,7 @@ echo "Starting Build Process..."
 # Ensure we are in the script's directory
 cd "$(dirname "$0")"
 
-# 1. Clean and Build the Release Binary
-echo "Cleaning old build artifacts..."
-rm -rf .build
-
-echo "Building Swift Package..."
-swift build -c release
-
-# 2. Package the App using existing script
+# 1. Package the app (script handles release build + DMG creation)
 echo "Packaging App..."
 if [ -f "$BUILD_SCRIPT" ]; then
     chmod +x "$BUILD_SCRIPT"
@@ -28,14 +21,13 @@ else
     exit 1
 fi
 
-# 3. Create DMG
-echo "Creating DMG..."
+# 2. Validate output
+echo "Validating output..."
 if [ -d "$APP_NAME" ]; then
-    # package_dmg.sh already creates the DMG; ensure it exists and move it up
+    # package_dmg.sh already creates the DMG in the current directory
     if [ -f "$DMG_NAME" ]; then
         echo "DMG Created Successfully: $DMG_NAME"
-        mv "$DMG_NAME" ../"$DMG_NAME"
-        echo "Moved DMG to: ../$DMG_NAME"
+        echo "Location: $(pwd)/$DMG_NAME"
     else
         echo "Error: Expected $DMG_NAME to be created by $BUILD_SCRIPT, but it was not found."
         exit 1

@@ -6,8 +6,10 @@ extension EKReminder: @retroactive Identifiable {
     public var id: String { calendarItemIdentifier }
 }
 
+@MainActor
 class RemindersService: ObservableObject {
     private let store = EKEventStore()
+    private var latestFetchToken = UUID()
     
     @Published var lists: [EKCalendar] = []
     @Published var reminders: [EKReminder] = []
@@ -22,13 +24,13 @@ class RemindersService: ObservableObject {
     
     func requestAccess() {
         store.requestFullAccessToReminders { granted, error in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.isAccessGranted = granted
                 if granted {
                     self.fetchLists()
                     self.fetchReminders() 
                 } else if let error = error {
-                    print("Error requesting access: \(error.localizedDescription)")
+                    AppLogger.reminders.error("Error requesting access: \(error.localizedDescription, privacy: .public)")
                 }
             }
         }
@@ -42,6 +44,9 @@ class RemindersService: ObservableObject {
     }
     
     func fetchReminders() {
+        let fetchToken = UUID()
+        latestFetchToken = fetchToken
+        
         // Shared Date Logic
         let now = Date()
         let calendar = Calendar.current
@@ -99,7 +104,8 @@ class RemindersService: ObservableObject {
                     return (r1.dueDateComponents?.date ?? Date.distantFuture) < (r2.dueDateComponents?.date ?? Date.distantFuture)
                 }
                 
-                DispatchQueue.main.async {
+                Task { @MainActor in
+                    guard fetchToken == self.latestFetchToken else { return }
                     self.reminders = sortedReminders
                 }
             }
@@ -129,9 +135,10 @@ class RemindersService: ObservableObject {
                 let sortedCompleted = reminders.sorted {
                     ($0.completionDate ?? Date.distantPast) > ($1.completionDate ?? Date.distantPast)
                 }
-                 DispatchQueue.main.async {
-                     self.recentCompletedReminders = sortedCompleted
-                 }
+                Task { @MainActor in
+                    guard fetchToken == self.latestFetchToken else { return }
+                    self.recentCompletedReminders = sortedCompleted
+                }
             }
         }
     }
@@ -145,7 +152,7 @@ class RemindersService: ObservableObject {
             // Ideally we animate it out, but for now just refresh
             fetchReminders()
         } catch {
-            print("Failed to save reminder: \(error)")
+            AppLogger.reminders.error("Failed to save reminder: \(String(describing: error), privacy: .public)")
         }
     }
     
@@ -155,7 +162,7 @@ class RemindersService: ObservableObject {
         do {
             try store.save(reminder, commit: true)
         } catch {
-            print("Failed to update title: \(error)")
+            AppLogger.reminders.error("Failed to update title: \(String(describing: error), privacy: .public)")
         }
     }
     
@@ -167,7 +174,7 @@ class RemindersService: ObservableObject {
             // No need to fetchReminders() if we are careful, but refreshing is safer for bindings
             objectWillChange.send() 
         } catch {
-            print("Failed to update notes: \(error)")
+            AppLogger.reminders.error("Failed to update notes: \(String(describing: error), privacy: .public)")
         }
     }
     
@@ -195,7 +202,7 @@ class RemindersService: ObservableObject {
             try store.save(reminder, commit: true)
             fetchReminders() // Re-sort potentially
         } catch {
-            print("Failed to update due date: \(error)")
+            AppLogger.reminders.error("Failed to update due date: \(String(describing: error), privacy: .public)")
         }
     }
     
@@ -208,7 +215,7 @@ class RemindersService: ObservableObject {
             try store.save(reminder, commit: true)
             fetchReminders() // Re-sort potentially if we sort by priority later
         } catch {
-            print("Failed to update priority: \(error)")
+            AppLogger.reminders.error("Failed to update priority: \(String(describing: error), privacy: .public)")
         }
     }
     
@@ -228,7 +235,7 @@ class RemindersService: ObservableObject {
             try store.save(reminder, commit: true)
             fetchReminders()
         } catch {
-             print("Failed to update recurrence: \(error)")
+            AppLogger.reminders.error("Failed to update recurrence: \(String(describing: error), privacy: .public)")
         }
     }
     
@@ -245,7 +252,7 @@ class RemindersService: ObservableObject {
             try store.save(reminder, commit: true)
             fetchReminders() // Fetch will handle appending to sort order
         } catch {
-            print("Failed to create reminder: \(error)")
+            AppLogger.reminders.error("Failed to create reminder: \(String(describing: error), privacy: .public)")
         }
     }
     
@@ -313,7 +320,7 @@ class RemindersService: ObservableObject {
             try store.remove(reminder, commit: true)
             fetchReminders()
         } catch {
-            print("Failed to delete reminder: \(error)")
+            AppLogger.reminders.error("Failed to delete reminder: \(String(describing: error), privacy: .public)")
         }
     }
     

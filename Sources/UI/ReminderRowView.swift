@@ -18,8 +18,14 @@ struct ReminderRowView: View, Equatable {
     @State private var showEstimateEdit = false
     @State private var showMoreActions = false // New state for hover menu
     @State private var isCompleting = false
+    @State private var isTitleEditing = false
+    @State private var titleDraft = ""
+    @FocusState private var isTitleFieldFocused: Bool
     
     @AppStorage("appTheme") private var appTheme: AppTheme = .glass
+    
+    private let completionCommitDelay: TimeInterval = 0.18
+    private let completionAnimation = Animation.interactiveSpring(response: 0.22, dampingFraction: 0.8, blendDuration: 0.1)
     
     private var effectiveHover: Bool {
         return isHovering && !isDraggingAppWide
@@ -30,13 +36,16 @@ struct ReminderRowView: View, Equatable {
             HStack(alignment: .center, spacing: 12) {
                 // Checkbox
                 Button(action: {
+                    guard !isCompleting else { return }
+                    
                     if !reminder.isCompleted {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        withAnimation(completionAnimation) {
                             isCompleting = true
                         }
                         NSSound(named: "Glass")?.play()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + completionCommitDelay) {
                             remindersService.toggleComplete(reminder)
+                            isCompleting = false
                         }
                     } else {
                         remindersService.toggleComplete(reminder)
@@ -47,10 +56,14 @@ struct ReminderRowView: View, Equatable {
                             .stroke(reminder.priority > 0 ? priorityColor(for: reminder.priority) : Color.secondary, lineWidth: 1.5)
                             .frame(width: 14, height: 14) // Reduced from default (approx 18->14 is ~80%)
                         
-                        if isCompleting {
-                             Circle()
+                        if reminder.isCompleted || isCompleting {
+                            Circle()
                                 .fill(reminder.priority > 0 ? priorityColor(for: reminder.priority) : Color.secondary)
                                 .frame(width: 10, height: 10)
+                            
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundColor(.black.opacity(0.65))
                         }
                         
                         // Particle Effects
@@ -62,11 +75,23 @@ struct ReminderRowView: View, Equatable {
                 .buttonStyle(.plain)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(reminder.title)
-                        .strikethrough(reminder.isCompleted)
-                        .foregroundColor(reminder.isCompleted ? .secondary : .primary)
-                        .lineLimit(2)
-                        .font(.system(size: 13, weight: .regular))
+                    if isTitleEditing {
+                        TextField("Task title", text: $titleDraft)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 13, weight: .regular))
+                            .focused($isTitleFieldFocused)
+                            .onSubmit { saveTitleEdit() }
+                            .onExitCommand { cancelTitleEdit() }
+                    } else {
+                        Text(reminder.title)
+                            .strikethrough(reminder.isCompleted)
+                            .foregroundColor(reminder.isCompleted ? .secondary : .primary)
+                            .lineLimit(2)
+                            .font(.system(size: 13, weight: .regular))
+                            .onTapGesture(count: 2) {
+                                beginTitleEditing()
+                            }
+                    }
                     
                     if let notes = reminder.notes, !notes.isEmpty {
                         Text(notes.components(separatedBy: .newlines).first ?? "")
@@ -105,20 +130,12 @@ struct ReminderRowView: View, Equatable {
             .padding(.vertical, 14)
             .overlay(alignment: .trailing) {
                 let isEditing = showEstimateEdit || showNotesEdit || showTimeEdit || showMoreActions || showCalendarEdit
-                let showActions = (effectiveHover && !reminder.isCompleted) || isEditing
+                let showActions = !isTitleEditing && ((effectiveHover && !reminder.isCompleted) || isEditing)
                 
                 if showActions {
                     HStack(spacing: 0) {
-                        // Gradient Mask to fade out content behind
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(red: 0.11, green: 0.11, blue: 0.12).opacity(0.0),
-                                Color(red: 0.11, green: 0.11, blue: 0.12).opacity(appTheme == .glass ? 0.95 : 1.0),
-                                Color(red: 0.11, green: 0.11, blue: 0.12).opacity(appTheme == .glass ? 0.95 : 1.0)
-                            ]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                        // Left fade area to reveal underlying content.
+                        Color.clear
                         .frame(width: 40) // Reduced width slightly for sharper transition
                         .frame(maxHeight: .infinity)
                         
@@ -229,9 +246,44 @@ struct ReminderRowView: View, Equatable {
                         }
                         .padding(.trailing, 16)
                         .frame(maxHeight: .infinity)
-                        .background(Color(red: 0.11, green: 0.11, blue: 0.12).opacity(appTheme == .glass ? 0.95 : 1.0))
                     }
-                    .frame(maxHeight: .infinity) 
+                    .frame(maxHeight: .infinity)
+                    .background {
+                        if appTheme == .glass {
+                            glassOverlayBase(grainOpacity: 0.05)
+                        } else {
+                            Color(red: 0.11, green: 0.11, blue: 0.12)
+                        }
+                    }
+                    .mask(
+                        Group {
+                            if appTheme == .glass {
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: .clear, location: 0.0),
+                                        .init(color: .white.opacity(0.85), location: 0.16),
+                                        .init(color: .white, location: 0.24),
+                                        .init(color: .white, location: 1.0)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            } else {
+                                // Dark theme: shift fade left so button area fully masks row text.
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: .clear, location: 0.0),
+                                        .init(color: .white.opacity(0.9), location: 0.10),
+                                        .init(color: .white, location: 0.17),
+                                        .init(color: .white, location: 1.0)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            }
+                        }
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
             
@@ -344,12 +396,13 @@ struct ReminderRowView: View, Equatable {
         }
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(red: 0.11, green: 0.11, blue: 0.12).opacity(appTheme == .glass ? 0.25 : 1.0))
+                .fill(Color(red: 0.11, green: 0.11, blue: 0.12).opacity(appTheme == .glass ? 0.18 : 1.0))
                 .shadow(color: .black.opacity(0.3), radius: 6, x: 0, y: 3)
                 // Hover Glow Effect (Colored based on priority)
                 .shadow(color: effectiveHover ? priorityColor(for: reminder.priority).opacity(0.25) : Color.clear, radius: 8, x: 0, y: 0)
                 .drawingGroup() // Optimization: Offload shadow rendering to GPU
         )
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
@@ -373,7 +426,52 @@ struct ReminderRowView: View, Equatable {
                 isHovering = hover
             }
         }
+        .scaleEffect(isCompleting ? 0.985 : 1.0)
+        .onChange(of: isTitleEditing) { _, editing in
+            if editing {
+                DispatchQueue.main.async {
+                    isTitleFieldFocused = true
+                }
+            }
+        }
         .opacity(isCompleting ? 0.0 : 1.0)
+    }
+    
+    private func beginTitleEditing() {
+        guard !reminder.isCompleted else { return }
+        titleDraft = reminder.title
+        withAnimation {
+            isTitleEditing = true
+        }
+    }
+    
+    private func saveTitleEdit() {
+        let trimmed = titleDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        withAnimation {
+            isTitleEditing = false
+        }
+        guard !trimmed.isEmpty else { return }
+        remindersService.updateTitle(reminder, newTitle: trimmed)
+    }
+    
+    private func cancelTitleEdit() {
+        titleDraft = reminder.title
+        withAnimation {
+            isTitleEditing = false
+        }
+    }
+    
+    @ViewBuilder
+    private func glassOverlayBase(grainOpacity: Double) -> some View {
+        ZStack {
+            VisualEffectView(material: .popover, blendingMode: .withinWindow)
+            GrainOverlay(opacity: grainOpacity)
+            LinearGradient(
+                colors: [.white.opacity(0.14), .clear],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
     }
     
     func formatTimeDisplay(spent: TimeInterval, est: TimeInterval) -> String {
@@ -395,8 +493,12 @@ struct ReminderRowView: View, Equatable {
     }
 
     func formatDueTime(_ components: DateComponents?) -> String? {
-        guard let _ = components?.hour, let _ = components?.minute else { return nil }
-        let date = Calendar.current.date(from: components!) ?? Date()
+        guard
+            let components,
+            components.hour != nil,
+            components.minute != nil,
+            let date = Calendar.current.date(from: components)
+        else { return nil }
         return CachedFormatters.shortTime.string(from: date)
     }
     
@@ -735,3 +837,36 @@ private struct CachedFormatters {
     }()
 }
 
+private struct GrainOverlay: View {
+    let opacity: Double
+    
+    var body: some View {
+        Canvas { context, size in
+            let step: CGFloat = 2.0
+            var x: CGFloat = 0
+            while x < size.width {
+                var y: CGFloat = 0
+                while y < size.height {
+                    let noise = deterministicNoise(x: x, y: y)
+                    if noise > 0.82 {
+                        let alpha = (noise - 0.82) * 2.2 * opacity
+                        let dot = CGRect(x: x, y: y, width: 1, height: 1)
+                        context.fill(Path(ellipseIn: dot), with: .color(.white.opacity(alpha)))
+                    } else if noise < 0.08 {
+                        let alpha = (0.08 - noise) * 1.5 * opacity
+                        let dot = CGRect(x: x, y: y, width: 1, height: 1)
+                        context.fill(Path(ellipseIn: dot), with: .color(.black.opacity(alpha)))
+                    }
+                    y += step
+                }
+                x += step
+            }
+        }
+        .allowsHitTesting(false)
+    }
+    
+    private func deterministicNoise(x: CGFloat, y: CGFloat) -> Double {
+        let value = sin(Double(x) * 12.9898 + Double(y) * 78.233) * 43758.5453
+        return value - floor(value)
+    }
+}

@@ -23,6 +23,7 @@ struct FloatingPillView: View {
     @EnvironmentObject var timerService: TimerService
     @EnvironmentObject var remindersService: RemindersService
     @EnvironmentObject var estimateStore: EstimateStore
+    @EnvironmentObject var windowCoordinator: AppWindowCoordinator
     
     @State private var isHovering = false
     @State private var window: NSWindow?
@@ -114,26 +115,32 @@ struct FloatingPillView: View {
             }
         }
         .onAppear {
-              if let window = NSApp.windows.first(where: { $0.title == "Timer" }) {
-                  styleWindow(window)
-              }
+            if let window {
+                styleWindow(window)
+            }
         }
         .onChange(of: window) { _, newWindow in
             if let win = newWindow {
                 styleWindow(win)
             }
         }
+        .onDisappear {
+            if windowCoordinator.pillWindow === window {
+                windowCoordinator.pillWindow = nil
+            }
+        }
     }
     
     private func styleWindow(_ window: NSWindow) {
+        window.identifier = AppWindowCoordinator.pillWindowIdentifier
+        windowCoordinator.pillWindow = window
+        window.isReleasedWhenClosed = false
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = false
-        
-        // Disable resizing strictly
-        if window.styleMask.contains(.resizable) {
-            window.styleMask.remove(.resizable)
-        }
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.styleMask = [.borderless, .fullSizeContentView]
         
         // Hide standard buttons explicitly
         window.standardWindowButton(.closeButton)?.isHidden = true

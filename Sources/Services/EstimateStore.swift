@@ -21,6 +21,8 @@ class TaskMetadata {
 
 @MainActor
 class EstimateStore: ObservableObject {
+    @Published private(set) var lastSaveError: String?
+    
     // Phase 1: In-Memory Cache
     private var metadataCache: [String: TaskMetadata] = [:]
     
@@ -46,7 +48,7 @@ class EstimateStore: ObservableObject {
             container = try ModelContainer(for: TaskMetadata.self)
             loadCache()
         } catch {
-            print("Failed to create ModelContainer: \(error)")
+            AppLogger.estimate.error("Failed to create ModelContainer: \(String(describing: error), privacy: .public)")
         }
     }
     
@@ -61,7 +63,7 @@ class EstimateStore: ObservableObject {
             
             // Pre-warm observers if needed (lazy is better usually, but clean)
         } catch {
-            print("Failed to load cache: \(error)")
+            AppLogger.estimate.error("Failed to load cache: \(String(describing: error), privacy: .public)")
         }
     }
     
@@ -102,7 +104,7 @@ class EstimateStore: ObservableObject {
         // Update Observer
         observerCache[id]?.estimatedDuration = duration
         
-        try? context.save()
+        save(context: context, operation: "update estimate")
         objectWillChange.send() // Re-enabled: Needed for SideStripView header stats
     }
     
@@ -122,12 +124,23 @@ class EstimateStore: ObservableObject {
         // Update Observer
         observerCache[id]?.timeSpent = seconds
         
-        try? context.save()
+        save(context: context, operation: "set time spent")
         objectWillChange.send() // Re-enabled: Needed for SideStripView header stats
     }
     
     func addTimeSpent(for id: String, seconds: TimeInterval) {
         let current = metadataCache[id]?.timeSpent ?? 0
         setTimeSpent(for: id, seconds: current + seconds)
+    }
+    
+    private func save(context: ModelContext, operation: String) {
+        do {
+            try context.save()
+            lastSaveError = nil
+        } catch {
+            let message = "Failed to \(operation): \(error)"
+            lastSaveError = message
+            AppLogger.estimate.error("\(message, privacy: .public)")
+        }
     }
 }

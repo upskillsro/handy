@@ -2,10 +2,12 @@ import SwiftUI
 import AppKit
 
 @main
-struct ReminderHelperApp: App {
+struct FocusApp: App {
     @StateObject var remindersService = RemindersService()
     @StateObject var estimateStore = EstimateStore()
     @StateObject var timerService = TimerService()
+    @StateObject var windowCoordinator = AppWindowCoordinator()
+    @State private var panelPositionObserver: NSObjectProtocol?
     
     init() {
         // Link services
@@ -16,11 +18,12 @@ struct ReminderHelperApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Reminder Helper") {
+        WindowGroup("Focus") {
             SideStripView()
                 .environmentObject(remindersService)
                 .environmentObject(timerService)
                 .environmentObject(estimateStore)
+                .environmentObject(windowCoordinator)
                 .frame(minWidth: 300, maxWidth: 350)
                 .onAppear {
                     // Set App Icon
@@ -38,15 +41,29 @@ struct ReminderHelperApp: App {
                     // Position Main Window as Sidebar
                     DispatchQueue.main.async {
                         if let window = NSApplication.shared.windows.first {
+                            window.identifier = AppWindowCoordinator.mainWindowIdentifier
+                            windowCoordinator.mainWindow = window
                             setupWindowPosition(window)
                             
-                            // Observe position changes
-                            NotificationCenter.default.addObserver(forName: NSNotification.Name("UpdatePanelPosition"), object: nil, queue: .main) { _ in
-                                withAnimation {
-                                    setupWindowPosition(window)
+                            // Observe position changes once per lifecycle
+                            if panelPositionObserver == nil {
+                                panelPositionObserver = NotificationCenter.default.addObserver(
+                                    forName: NSNotification.Name("UpdatePanelPosition"),
+                                    object: nil,
+                                    queue: .main
+                                ) { _ in
+                                    withAnimation {
+                                        setupWindowPosition(window)
+                                    }
                                 }
                             }
                         }
+                    }
+                }
+                .onDisappear {
+                    if let observer = panelPositionObserver {
+                        NotificationCenter.default.removeObserver(observer)
+                        panelPositionObserver = nil
                     }
                 }
         }
@@ -61,6 +78,7 @@ struct ReminderHelperApp: App {
                     .environmentObject(timerService)
                     .environmentObject(remindersService)
                     .environmentObject(estimateStore)
+                    .environmentObject(windowCoordinator)
             }
         }
         .windowStyle(.hiddenTitleBar)

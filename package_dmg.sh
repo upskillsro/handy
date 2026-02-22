@@ -3,10 +3,10 @@ set -e
 
 # Configuration
 APP_NAME="Focus"
-EXECUTABLE_NAME="ReminderHelper"
-ICON_SOURCE="../Logo V1.icns" # Relative to ReminderHelper dir
+EXECUTABLE_NAME="Focus"
+ICON_SOURCE="FocusAppIcon.icns"
 OUTPUT_DMG="Focus.dmg"
-BUILD_ARCH_DIR=".build/arm64-apple-macosx/release"
+BUILD_ARCH_DIR=".build/release"
 
 echo "🚀 Starting Packaging Process..."
 
@@ -74,7 +74,7 @@ cat <<EOF > "$APP_NAME.app/Contents/Info.plist"
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
-    <string>12.0</string>
+    <string>14.0</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSRemindersUsageDescription</key>

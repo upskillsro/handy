@@ -2,20 +2,25 @@
 import PackageDescription
 
 let package = Package(
-    name: "ReminderHelper",
+    name: "Focus",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "ReminderHelper", targets: ["ReminderHelper"])
+        .executable(name: "Focus", targets: ["Focus"])
     ],
     targets: [
         .executableTarget(
-            name: "ReminderHelper",
+            name: "Focus",
             path: "Sources",
             resources: [
                 .process("Resources")
             ]
+        ),
+        .testTarget(
+            name: "FocusTests",
+            dependencies: ["Focus"],
+            path: "Tests/FocusTests"
         )
     ]
 )
