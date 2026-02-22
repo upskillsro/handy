@@ -1,0 +1,331 @@
+import EventKit
+import Foundation
+import SwiftUI
+
+extension EKReminder: @retroactive Identifiable {
+    public var id: String { calendarItemIdentifier }
+}
+
+class RemindersService: ObservableObject {
+    private let store = EKEventStore()
+    
+    @Published var lists: [EKCalendar] = []
+    @Published var reminders: [EKReminder] = []
+    @Published var isAccessGranted: Bool = false
+    
+    // Simple caching/filtering
+    @Published var activeListId: String? = nil // nil = Today/All
+    
+    init() {
+        requestAccess()
+    }
+    
+    func requestAccess() {
+        store.requestFullAccessToReminders { granted, error in
+            DispatchQueue.main.async {
+                self.isAccessGranted = granted
+                if granted {
+                    self.fetchLists()
+                    self.fetchReminders() 
+                } else if let error = error {
+                    print("Error requesting access: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
+    @Published var recentCompletedReminders: [EKReminder] = []
+
+    func fetchLists() {
+        let calendars = store.calendars(for: .reminder)
+        self.lists = calendars
+    }
+    
+    func fetchReminders() {
+        // Shared Date Logic
+        let now = Date()
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: now)
+        let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: now)
+        
+        // Capture sort key on Main Thread (assuming fetchReminders is called from Main)
+        let sortKey = self.currentSortOrderKey
+        
+        // 1. Fetch Incomplete Reminders
+        let incompletePredicate: NSPredicate
+        if activeListId == nil {
+            // Today Mode: Incomplete due today or overdue
+            incompletePredicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: endOfToday, calendars: nil)
+        } else {
+            // Specific List: All incomplete in that list
+            if let list = lists.first(where: { $0.calendarIdentifier == activeListId }) {
+               incompletePredicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: [list])
+            } else {
+               // Fallback
+               activeListId = nil
+               fetchReminders()
+               return
+            }
+        }
+        
+        store.fetchReminders(matching: incompletePredicate) { [weak self] reminders in
+            guard let self = self, let reminders = reminders else { return }
+            
+            // Phase 2 Optimization: Async Sorting
+            DispatchQueue.global(qos: .userInitiated).async {
+                // Unified Sorting Strategy
+                // Load saved order map once
+                let savedOrder = UserDefaults.standard.stringArray(forKey: sortKey) ?? []
+                let idToIndex = Dictionary(uniqueKeysWithValues: savedOrder.enumerated().map { ($0.element, $0.offset) })
+                
+                let sortedReminders = reminders.sorted { (r1, r2) in
+                    let idx1 = idToIndex[r1.calendarItemIdentifier]
+                    let idx2 = idToIndex[r2.calendarItemIdentifier]
+                    
+                    // 1. Both have custom positions -> Sort by Index
+                    if let i1 = idx1, let i2 = idx2 {
+                        return i1 < i2
+                    }
+                    
+                    // 2. Only one has custom position -> Custom one comes first? Or Last? 
+                    // Let's replicate strict logic:
+                    if idx1 != nil || idx2 != nil {
+                        let i1 = idx1 ?? Int.max
+                        let i2 = idx2 ?? Int.max
+                        if i1 != i2 { return i1 < i2 }
+                    }
+                    
+                    // 3. Fallback to Date (Due Date or Creation Date)
+                    return (r1.dueDateComponents?.date ?? Date.distantFuture) < (r2.dueDateComponents?.date ?? Date.distantFuture)
+                }
+                
+                DispatchQueue.main.async {
+                    self.reminders = sortedReminders
+                }
+            }
+        }
+        
+        // 2. Fetch Recently Completed (Today)
+        // ... (rest unchanged)
+        let completedPredicate: NSPredicate
+        let completionStart = startOfToday
+        let completionEnd = endOfToday
+        
+        if activeListId == nil {
+            completedPredicate = store.predicateForCompletedReminders(withCompletionDateStarting: completionStart, ending: completionEnd, calendars: nil)
+        } else {
+             if let list = lists.first(where: { $0.calendarIdentifier == activeListId }) {
+                completedPredicate = store.predicateForCompletedReminders(withCompletionDateStarting: completionStart, ending: completionEnd, calendars: [list])
+             } else {
+                 return 
+             }
+        }
+        
+        store.fetchReminders(matching: completedPredicate) { [weak self] reminders in
+            guard let self = self, let reminders = reminders else { return }
+            
+            // Async sort for completed as well
+            DispatchQueue.global(qos: .userInitiated).async {
+                let sortedCompleted = reminders.sorted {
+                    ($0.completionDate ?? Date.distantPast) > ($1.completionDate ?? Date.distantPast)
+                }
+                 DispatchQueue.main.async {
+                     self.recentCompletedReminders = sortedCompleted
+                 }
+            }
+        }
+    }
+    
+    // ... (rest of methods)
+    
+    func toggleComplete(_ reminder: EKReminder) {
+        do {
+            reminder.isCompleted.toggle()
+            try store.save(reminder, commit: true)
+            // Ideally we animate it out, but for now just refresh
+            fetchReminders()
+        } catch {
+            print("Failed to save reminder: \(error)")
+        }
+    }
+    
+    func updateTitle(_ reminder: EKReminder, newTitle: String) {
+        guard reminder.title != newTitle else { return }
+        reminder.title = newTitle
+        do {
+            try store.save(reminder, commit: true)
+        } catch {
+            print("Failed to update title: \(error)")
+        }
+    }
+    
+    func updateNotes(_ reminder: EKReminder, newNotes: String) {
+        guard reminder.notes != newNotes else { return }
+        reminder.notes = newNotes
+        do {
+            try store.save(reminder, commit: true)
+            // No need to fetchReminders() if we are careful, but refreshing is safer for bindings
+            objectWillChange.send() 
+        } catch {
+            print("Failed to update notes: \(error)")
+        }
+    }
+    
+    func updateDueDate(_ reminder: EKReminder, date: Date?) {
+        let newComponents: DateComponents?
+        if let date = date {
+            newComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        } else {
+            newComponents = nil
+        }
+        
+        guard reminder.dueDateComponents != newComponents else { return }
+        
+        reminder.dueDateComponents = newComponents
+        
+        // Also update alarm if needed (optional but good for notifications)
+        if let date = date {
+            let alarm = EKAlarm(absoluteDate: date)
+            reminder.alarms = [alarm]
+        } else {
+            reminder.alarms = []
+        }
+        
+        do {
+            try store.save(reminder, commit: true)
+            fetchReminders() // Re-sort potentially
+        } catch {
+            print("Failed to update due date: \(error)")
+        }
+    }
+    
+    func updatePriority(_ reminder: EKReminder, priority: Int) {
+        // EKReminder priority: 0 (None), 1-4 (High), 5 (Medium), 6-9 (Low)
+        // Standard mapping: High=1, Medium=5, Low=9, None=0
+        guard reminder.priority != priority else { return }
+        reminder.priority = priority
+        do {
+            try store.save(reminder, commit: true)
+            fetchReminders() // Re-sort potentially if we sort by priority later
+        } catch {
+            print("Failed to update priority: \(error)")
+        }
+    }
+    
+    func updateRecurrence(_ reminder: EKReminder, frequency: EKRecurrenceFrequency?, interval: Int = 1) {
+        if let frequency = frequency {
+            let recurrenceRule = EKRecurrenceRule(
+                recurrenceWith: frequency,
+                interval: interval,
+                end: nil
+            )
+            reminder.recurrenceRules = [recurrenceRule]
+        } else {
+             reminder.recurrenceRules = nil
+        }
+        
+        do {
+            try store.save(reminder, commit: true)
+            fetchReminders()
+        } catch {
+             print("Failed to update recurrence: \(error)")
+        }
+    }
+    
+    func createReminder(title: String, in calendar: EKCalendar? = nil, dueDate: DateComponents? = nil) {
+        let reminder = EKReminder(eventStore: store)
+        reminder.title = title
+        reminder.calendar = calendar ?? store.defaultCalendarForNewReminders()
+        
+        if let dueDate = dueDate {
+            reminder.dueDateComponents = dueDate
+        }
+        
+        do {
+            try store.save(reminder, commit: true)
+            fetchReminders() // Fetch will handle appending to sort order
+        } catch {
+            print("Failed to create reminder: \(error)")
+        }
+    }
+    
+    // MARK: - Sorting Logic
+    
+    private var currentSortOrderKey: String {
+        return "sortOrder_\(activeListId ?? "today")"
+    }
+    
+    private func saveSortOrder() {
+        let ids = reminders.map { $0.calendarItemIdentifier }
+        UserDefaults.standard.set(ids, forKey: currentSortOrderKey)
+    }
+    
+    // Live Reordering Methods
+    func moveInMemory(from source: IndexSet, to destination: Int) {
+        // Safety check
+        guard destination >= 0 && destination <= reminders.count else { return }
+        reminders.move(fromOffsets: source, toOffset: destination)
+    }
+    
+    func commitSortOrder() {
+        saveSortOrder()
+    }
+    
+    func moveReminder(from source: IndexSet, to destination: Int) {
+        moveInMemory(from: source, to: destination)
+        commitSortOrder()
+    }
+    
+    // Helper for drag and drop single item (Legacy/Fallback)
+    func moveReminder(withId id: String, toIndex index: Int) {
+        guard let oldIndex = reminders.firstIndex(where: { $0.calendarItemIdentifier == id }) else { return }
+        
+        // Safety bounds
+        guard index >= 0 && index <= reminders.count else { return }
+        
+        var newIndex = index
+        if oldIndex < newIndex {
+            newIndex -= 1 
+        }
+        
+        if oldIndex == newIndex { return }
+        
+        var tempReminders = reminders
+        
+        // Safe removal
+        if oldIndex < tempReminders.count {
+            let item = tempReminders.remove(at: oldIndex)
+            
+            // Safe insertion
+            if newIndex >= tempReminders.count {
+                tempReminders.append(item)
+            } else {
+                tempReminders.insert(item, at: newIndex)
+            }
+            
+            reminders = tempReminders
+            saveSortOrder()
+        }
+    }
+    
+    func deleteReminder(_ reminder: EKReminder) {
+        do {
+            try store.remove(reminder, commit: true)
+            fetchReminders()
+        } catch {
+            print("Failed to delete reminder: \(error)")
+        }
+    }
+    
+    func getNextTask(after currentId: String) -> EKReminder? {
+        // Assuming 'reminders' is already sorted by priority/date
+        if let index = reminders.firstIndex(where: { $0.calendarItemIdentifier == currentId }) {
+            let nextIndex = index + 1
+            if nextIndex < reminders.count {
+                return reminders[nextIndex]
+            }
+        }
+        // Fallback or loop if needed? For now just return nil if last.
+        return nil
+    }
+}

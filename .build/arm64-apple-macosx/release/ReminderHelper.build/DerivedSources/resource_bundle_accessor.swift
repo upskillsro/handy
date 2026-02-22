@@ -1,0 +1,17 @@
+import Foundation
+
+extension Foundation.Bundle {
+    static let module: Bundle = {
+        let mainPath = Bundle.main.bundleURL.appendingPathComponent("ReminderHelper_ReminderHelper.bundle").path
+        let buildPath = "/Users/lungusebi/Desktop/AI/Apps/Focus/Dev Version 1.6.2 DMG fix/ReminderHelper/.build/arm64-apple-macosx/release/ReminderHelper_ReminderHelper.bundle"
+
+        let preferredBundle = Bundle(path: mainPath)
+
+        guard let bundle = preferredBundle ?? Bundle(path: buildPath) else {
+            // Users can write a function called fatalError themselves, we should be resilient against that.
+            Swift.fatalError("could not load resource bundle: from \(mainPath) or \(buildPath)")
+        }
+
+        return bundle
+    }()
+}

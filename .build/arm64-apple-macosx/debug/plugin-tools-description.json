@@ -1,0 +1,579 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+    "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper_ReminderHelper.bundle/AppIcon.icns" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Resources/AppIcon.icns"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper_ReminderHelper.bundle/AppIcon.icns"
+        }
+      ]
+    },
+    "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper_ReminderHelper.bundle/MenuBarIcon.png" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Resources/MenuBarIcon.png"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper_ReminderHelper.bundle/MenuBarIcon.png"
+        }
+      ]
+    }
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.ReminderHelper-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/sources",
+      "importPath" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/ReminderHelperApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/EstimateStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/RemindersService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/SettingsStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/TimerService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/Components/ParticleEffectView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/Components/ScrollViewIntrospection.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/EmbeddedSettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/FloatingPillView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/ReminderRowView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/SideStripView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/ThemePreviewCard.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/VisualEffectView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/WindowDragHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/DerivedSources/resource_bundle_accessor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<ReminderHelper-arm64-apple-macosx26.0-debug.module-resources>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "ReminderHelper",
+      "moduleOutputPath" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/Modules/ReminderHelper.swiftmodule",
+      "objects" : [
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ReminderHelperApp.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/EstimateStore.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/RemindersService.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/SettingsStore.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/TimerService.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ParticleEffectView.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ScrollViewIntrospection.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/EmbeddedSettingsView.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/FloatingPillView.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ReminderRowView.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/SettingsView.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/SideStripView.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ThemePreviewCard.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/VisualEffectView.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/WindowDragHandler.swift.o",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/resource_bundle_accessor.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+        "-module-cache-path",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "ReminderHelper_main",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "focus"
+      ],
+      "outputFileMapPath" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ReminderHelperApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/EstimateStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/RemindersService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/SettingsStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/TimerService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ParticleEffectView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ScrollViewIntrospection.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/EmbeddedSettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/FloatingPillView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ReminderRowView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/SideStripView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ThemePreviewCard.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/VisualEffectView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/WindowDragHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/resource_bundle_accessor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/Modules/ReminderHelper.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/ReminderHelperApp.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/EstimateStore.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/RemindersService.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/SettingsStore.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/TimerService.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/Components/ParticleEffectView.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/Components/ScrollViewIntrospection.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/EmbeddedSettingsView.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/FloatingPillView.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/ReminderRowView.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/SettingsView.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/SideStripView.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/ThemePreviewCard.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/VisualEffectView.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/WindowDragHandler.swift",
+        "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/DerivedSources/resource_bundle_accessor.swift"
+      ],
+      "tempsPath" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "ReminderHelper" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "ReminderHelper",
+      "-package-name",
+      "focus",
+      "-c",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/ReminderHelperApp.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/EstimateStore.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/RemindersService.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/SettingsStore.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/TimerService.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/Components/ParticleEffectView.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/Components/ScrollViewIntrospection.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/EmbeddedSettingsView.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/FloatingPillView.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/ReminderRowView.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/SettingsView.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/SideStripView.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/ThemePreviewCard.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/VisualEffectView.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/WindowDragHandler.swift",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/DerivedSources/resource_bundle_accessor.swift",
+      "-I",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+      "-module-cache-path",
+      "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "ReminderHelper_main",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "focus",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "ReminderHelper" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper-entitlement.plist"
+    },
+    "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/ReminderHelperApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/EstimateStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/RemindersService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/SettingsStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/Services/TimerService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/Components/ParticleEffectView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/Components/ScrollViewIntrospection.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/EmbeddedSettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/FloatingPillView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/ReminderRowView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/SideStripView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/ThemePreviewCard.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/VisualEffectView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/Sources/UI/WindowDragHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/DerivedSources/resource_bundle_accessor.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/sources"
+    },
+    "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/EmbeddedSettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/EstimateStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/FloatingPillView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ParticleEffectView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ReminderHelperApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ReminderRowView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/RemindersService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ScrollViewIntrospection.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/SettingsStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/SideStripView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/ThemePreviewCard.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/TimerService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/VisualEffectView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/WindowDragHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.build/resource_bundle_accessor.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/ReminderHelper.product/Objects.LinkFileList"
+    },
+    "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/lungusebi/Desktop/AI/Apps/Focus/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}
