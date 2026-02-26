@@ -1,11 +1,11 @@
-# Focus
+# Helpy
 
 A native macOS companion app for Apple Reminders, designed for focus and speed.
 
 ## Features
 - **Side Strip Interface**: Minimal UI that lives on your desktop.
 - **Estimated Durations**: localized estimate storage (persists even if Reminders app doesn't support it natively).
-- **Focus Timer**: Draggable floating pill overlay for active tasks.
+- **Helpy Timer**: Draggable floating pill overlay for active tasks.
 - **Bi-directional Sync**: Updates functionality syncs with Apple Reminders.
 - **Focus Mode**: Filter your list to just the active task.
 
@@ -14,7 +14,7 @@ A native macOS companion app for Apple Reminders, designed for focus and speed.
 ### 1. Open in Xcode
 The easiest way to run this is to open the `Package.swift` folder in Xcode.
 1. Open Xcode.
-2. Select **File > Open** and choose the `Focus` directory (containing `Package.swift`).
+2. Select **File > Open** and choose the `Helpy` directory (containing `Package.swift`).
 3. Xcode will resolve package dependencies.
 
 ### 2. Configure Capabilities (Important)
@@ -28,7 +28,7 @@ If you run it as a package, Xcode usually handles ad-hoc signing, but you may ne
    - Entitlement: `com.apple.security.personal-information.calendars`
 
 ### 3. Build and Run
-- Select the `Focus` scheme.
+- Select the `Helpy` scheme.
 - Press `Cmd+R`.
 - **Grant Access**: When prompted, allow access to Reminders. The app requires this to function.
 

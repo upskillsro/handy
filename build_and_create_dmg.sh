@@ -2,8 +2,8 @@
 set -e
 
 # Define variables
-APP_NAME="Focus.app"
-DMG_NAME="Focus.dmg"
+APP_NAME="Helpy.app"
+DMG_NAME="Helpy.dmg"
 BUILD_SCRIPT="package_dmg.sh"
 
 echo "Starting Build Process..."

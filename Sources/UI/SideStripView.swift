@@ -781,21 +781,38 @@ struct SideStripView: View {
 private struct MainWindowAccessor: NSViewRepresentable {
     let windowCoordinator: AppWindowCoordinator
     
+    final class Coordinator: NSObject, NSWindowDelegate {
+        func windowShouldClose(_ sender: NSWindow) -> Bool {
+            if SettingsStore().quitOnClose {
+                NSApp.terminate(nil)
+                return false
+            }
+            return true
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+    
+    private func configureWindow(_ window: NSWindow?, coordinator: Coordinator) {
+        guard let window else { return }
+        window.identifier = AppWindowCoordinator.mainWindowIdentifier
+        window.delegate = coordinator
+        windowCoordinator.mainWindow = window
+    }
+    
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
         DispatchQueue.main.async {
-            view.window?.identifier = AppWindowCoordinator.mainWindowIdentifier
-            windowCoordinator.mainWindow = view.window
+            configureWindow(view.window, coordinator: context.coordinator)
         }
         return view
     }
     
     func updateNSView(_ nsView: NSView, context: Context) {
-        if windowCoordinator.mainWindow == nil {
-            DispatchQueue.main.async {
-                nsView.window?.identifier = AppWindowCoordinator.mainWindowIdentifier
-                windowCoordinator.mainWindow = nsView.window
-            }
+        DispatchQueue.main.async {
+            configureWindow(nsView.window, coordinator: context.coordinator)
         }
     }
 }

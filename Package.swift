@@ -2,25 +2,25 @@
 import PackageDescription
 
 let package = Package(
-    name: "Focus",
+    name: "Helpy",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "Focus", targets: ["Focus"])
+        .executable(name: "Helpy", targets: ["Helpy"])
     ],
     targets: [
         .executableTarget(
-            name: "Focus",
+            name: "Helpy",
             path: "Sources",
             resources: [
                 .process("Resources")
             ]
         ),
         .testTarget(
-            name: "FocusTests",
-            dependencies: ["Focus"],
-            path: "Tests/FocusTests"
+            name: "HelpyTests",
+            dependencies: ["Helpy"],
+            path: "Tests/HelpyTests"
         )
     ]
 )

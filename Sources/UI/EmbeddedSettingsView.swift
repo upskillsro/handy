@@ -101,6 +101,18 @@ struct EmbeddedSettingsView: View {
                     
                     Divider().background(Color.white.opacity(0.1))
                     
+                    // APP BEHAVIOR
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("App Behavior")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        
+                        Toggle("Quit app when closing main window", isOn: $settings.quitOnClose)
+                            .toggleStyle(SwitchToggleStyle(tint: .white.opacity(0.8)))
+                    }
+                    
+                    Divider().background(Color.white.opacity(0.1))
+                    
                     // TASK ALERTS
                     VStack(alignment: .leading, spacing: 20) {
                         HStack {

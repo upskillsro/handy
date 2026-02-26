@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-APP_NAME="Focus.app"
-DMG_NAME="Focus.dmg"
+APP_NAME="Helpy.app"
+DMG_NAME="Helpy.dmg"
 STAGING_DIR="dmg_staging"
 
 # Clean up previous build artifacts
@@ -27,7 +27,7 @@ ln -s /Applications "$STAGING_DIR/Applications"
 
 # Create DMG
 echo "Creating DMG..."
-hdiutil create -volname "Focus" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
+hdiutil create -volname "Helpy" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
 
 # Cleanup
 echo "Cleaning up..."

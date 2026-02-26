@@ -52,6 +52,10 @@ struct GeneralSettingsView: View {
                 .pickerStyle(.menu)
             }
             
+            Section("App Behavior") {
+                Toggle("Quit app when closing main window", isOn: $settings.quitOnClose)
+            }
+            
             // ALERT SETTINGS
             Section("Time's Up Alert") {
                 Toggle("Enable Sound", isOn: $settings.isAlertEnabled)

@@ -22,6 +22,9 @@ class SettingsStore: ObservableObject {
     
     // Appearance
     @AppStorage("appTheme") var appTheme: AppTheme = .glass
+    
+    // App lifecycle
+    @AppStorage("quitOnClose") var quitOnClose: Bool = true
 }
 
 enum AppTheme: String, CaseIterable {
