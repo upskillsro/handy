@@ -24,6 +24,54 @@ struct SideStripView: View {
     
     private let completionCommitDelay: TimeInterval = 0.18
     private let completionAnimation = Animation.interactiveSpring(response: 0.22, dampingFraction: 0.8, blendDuration: 0.1)
+    private let accentBlue = Color(red: 67.0 / 255.0, green: 166.0 / 255.0, blue: 1.0)
+    
+    private var isWhiteTheme: Bool { appTheme == .white }
+    private var panelOverlayColor: Color {
+        switch appTheme {
+        case .glass: return .clear
+        case .dark: return Color.black.opacity(0.3)
+        case .white: return Color.black.opacity(0.05)
+        }
+    }
+    private var sessionCardFillColor: Color {
+        switch appTheme {
+        case .glass:
+            return Color(red: 0.11, green: 0.11, blue: 0.12).opacity(0.25)
+        case .dark:
+            return Color(red: 0.11, green: 0.11, blue: 0.12)
+        case .white:
+            return Color.white.opacity(0.95)
+        }
+    }
+    private var cardBorderColor: Color { isWhiteTheme ? Color.black.opacity(0.12) : Color.white.opacity(0.1) }
+    private var progressTrackColor: Color { isWhiteTheme ? Color.black.opacity(0.1) : Color.white.opacity(0.1) }
+    private var controlDividerColor: Color { isWhiteTheme ? Color.black.opacity(0.2) : Color.white.opacity(0.2) }
+    private var quickAddFillColor: Color {
+        switch appTheme {
+        case .glass: return Color.black.opacity(0.16)
+        case .dark: return Color.black.opacity(0.3)
+        case .white: return Color.white.opacity(0.94)
+        }
+    }
+    private var quickAddMaterialOpacity: Double {
+        switch appTheme {
+        case .glass: return 0.45
+        case .dark: return 0.3
+        case .white: return 0.2
+        }
+    }
+    private var quickAddBorderColor: Color { isWhiteTheme ? Color.black.opacity(0.14) : Color.white.opacity(0.1) }
+    private var focusForegroundColor: Color { .white }
+    private var focusFillColor: Color {
+        if isWhiteTheme {
+            return accentBlue
+        }
+        return appTheme == .dark ? Color.black.opacity(0.4) : Color.black.opacity(0.22)
+    }
+    private var focusGlowColor: Color { isWhiteTheme ? accentBlue.opacity(0.45) : Color.white.opacity(0.4) }
+    private var focusStrokeGradient: [Color] { [Color.white.opacity(0.3), Color.white.opacity(0.05)] }
+    private var listTitleColor: Color { isWhiteTheme ? accentBlue : .primary }
     
     var body: some View {
         ZStack {
@@ -31,7 +79,7 @@ struct SideStripView: View {
                 VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
                     .ignoresSafeArea()
             } else {
-                Color(nsColor: .windowBackgroundColor)
+                (isWhiteTheme ? Color.white : Color(nsColor: .windowBackgroundColor))
                     .ignoresSafeArea()
             }
             
@@ -39,7 +87,7 @@ struct SideStripView: View {
                 // Header
                 if !isSettingsOpen {
                     headerView
-                        .background(appTheme == .dark ? Color.black.opacity(0.3) : Color.clear)
+                        .background(panelOverlayColor)
                         .zIndex(1)
                 }
                 
@@ -64,14 +112,14 @@ struct SideStripView: View {
                         
                         // Footer
                         footerView
-                             .background(appTheme == .dark ? Color.black.opacity(0.3) : Color.clear)
+                             .background(panelOverlayColor)
                     }
                     .transition(.opacity) // Smoother fade transition for content
                 }
             }
         }
         .background(MainWindowAccessor(windowCoordinator: windowCoordinator))
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(isWhiteTheme ? .light : .dark)
         .frame(minWidth: 300, maxWidth: 350, maxHeight: .infinity)
         .onAppear {
             prewarmPillWindowIfNeeded()
@@ -232,7 +280,7 @@ struct SideStripView: View {
                         Text(remindersService.activeListId == nil ? "Today" : (remindersService.lists.first(where: { $0.calendarIdentifier == remindersService.activeListId })?.title ?? "List"))
                             .font(.custom("Times New Roman", size: 28))
                             .italic()
-                            .foregroundColor(.primary)
+                            .foregroundColor(listTitleColor)
                     }
                 }
                 .menuStyle(.borderlessButton)
@@ -291,7 +339,7 @@ struct SideStripView: View {
                     .overlay(
                         GeometryReader { geo in
                             Capsule()
-                                .fill(Color.primary)
+                                .fill(isWhiteTheme ? accentBlue : Color.primary)
                                 .frame(width: geo.size.width * CGFloat(progress)) // Real Progress
                         }
                     )
@@ -392,7 +440,7 @@ struct SideStripView: View {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Rectangle()
-                            .fill(Color.white.opacity(0.1))
+                            .fill(progressTrackColor)
                             .frame(height: 3)
                         
                         // Dynamic Progress Calculation for Break
@@ -413,13 +461,13 @@ struct SideStripView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(red: 0.11, green: 0.11, blue: 0.12).opacity(appTheme == .glass ? 0.25 : 1.0))
+                    .fill(sessionCardFillColor)
                     .shadow(color: .black.opacity(0.3), radius: 6, x: 0, y: 3)
             )
             .clipShape(RoundedRectangle(cornerRadius: 12)) // Clip content to rounded corners
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(cardBorderColor, lineWidth: 1)
             )
             .padding(.horizontal, 8)
         }
@@ -505,7 +553,7 @@ struct SideStripView: View {
                                 
                                 Divider()
                                     .frame(height: 16)
-                                    .background(Color.white.opacity(0.2))
+                                    .background(controlDividerColor)
                                 
                                 // Secondary Actions Group
                                 HStack(spacing: 12) {
@@ -572,7 +620,7 @@ struct SideStripView: View {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Rectangle()
-                            .fill(Color.white.opacity(0.1))
+                            .fill(progressTrackColor)
                             .frame(height: 3)
                         
                         // Simple progress calculation (visual)
@@ -592,13 +640,13 @@ struct SideStripView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(red: 0.11, green: 0.11, blue: 0.12).opacity(appTheme == .glass ? 0.25 : 1.0))
+                    .fill(sessionCardFillColor)
                     .shadow(color: .black.opacity(0.3), radius: 6, x: 0, y: 3)
             )
             .clipShape(RoundedRectangle(cornerRadius: 12)) // Clip content to rounded corners
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    .stroke(cardBorderColor, lineWidth: 1)
             )
             .overlay(ParticleEffectView(trigger: $isCompletingActive))
             .padding(.horizontal, 8) 
@@ -690,16 +738,16 @@ struct SideStripView: View {
         .background(
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.black.opacity(appTheme == .glass ? 0.16 : 0.3))
+                    .fill(quickAddFillColor)
                 
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.thinMaterial)
-                    .opacity(appTheme == .glass ? 0.45 : 0.3)
+                    .opacity(quickAddMaterialOpacity)
             }
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                .stroke(quickAddBorderColor, lineWidth: 1)
         )
         .padding(.horizontal, 7)
         .padding(.top, 8) // Added top padding as requested
@@ -730,32 +778,18 @@ struct SideStripView: View {
                             .fontWeight(.medium)
                     }
                     .font(.system(size: 14))
-                    .foregroundColor(.white)
+                    .foregroundColor(focusForegroundColor)
                     .padding(.vertical, 12)
                     .frame(maxWidth: .infinity)
                     .background(
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(.thinMaterial)
-                            
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.black.opacity(appTheme == .glass ? 0.22 : 0.4))
-                            
-                            if appTheme == .glass {
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.white.opacity(0.08))
-                            }
-                        }
+                        focusButtonBackground
                     )
-                    .shadow(color: isHoveringFocusButton ? Color.white.opacity(0.4) : Color.clear, radius: 10, x: 0, y: 0) // White Glow
+                    .shadow(color: isHoveringFocusButton ? focusGlowColor : Color.clear, radius: 10, x: 0, y: 0)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        Color.white.opacity(0.3),
-                                        Color.white.opacity(0.05)
-                                    ]),
+                                    gradient: Gradient(colors: focusStrokeGradient),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
@@ -774,6 +808,27 @@ struct SideStripView: View {
                 .padding(.horizontal, 7)
             }
             .padding(.vertical, 12)
+        }
+    }
+    
+    @ViewBuilder
+    private var focusButtonBackground: some View {
+        if isWhiteTheme {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(focusFillColor)
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.thinMaterial)
+                
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(focusFillColor)
+                
+                if appTheme == .glass {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.white.opacity(0.08))
+                }
+            }
         }
     }
 }
@@ -853,6 +908,7 @@ struct ReminderDropDelegate: DropDelegate {
 struct TimerDisplayView: View {
     @ObservedObject var ticker: TimeTicker
     @ObservedObject var service: TimerService // To access isOvertime/active state for formatting
+    @AppStorage("appTheme") private var appTheme: AppTheme = .glass
     
     var body: some View {
         // Optimization: Do not render/update if app is in Focus Mode (Pill is active) to save CPU
@@ -860,10 +916,15 @@ struct TimerDisplayView: View {
             Text(service.formattedTime())
                 .font(.system(size: 18, weight: .semibold, design: .monospaced))
                 .fontWeight(.bold)
-                .foregroundColor(service.isStopwatch ? .white : (service.isOvertime ? .orange : .white))
+                .foregroundColor(timerColor)
                 .contentTransition(.numericText(countsDown: !service.isStopwatch && !service.isOvertime))
                 .animation(.snappy, value: service.formattedTime())
                 .fixedSize()
         }
+    }
+    
+    private var timerColor: Color {
+        if service.isOvertime { return .orange }
+        return appTheme == .white ? Color.black.opacity(0.85) : .white
     }
 }

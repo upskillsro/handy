@@ -30,4 +30,5 @@ class SettingsStore: ObservableObject {
 enum AppTheme: String, CaseIterable {
     case glass
     case dark
+    case white
 }

@@ -24,10 +24,18 @@ struct FloatingPillView: View {
     @EnvironmentObject var remindersService: RemindersService
     @EnvironmentObject var estimateStore: EstimateStore
     @EnvironmentObject var windowCoordinator: AppWindowCoordinator
+    @AppStorage("appTheme") private var appTheme: AppTheme = .glass
     
     @State private var isHovering = false
     @State private var window: NSWindow?
     @State private var isPulsing = false
+    
+    private var isWhiteTheme: Bool { appTheme == .white }
+    private var overlayBaseColor: Color { isWhiteTheme ? Color.white.opacity(0.78) : Color.black.opacity(0.3) }
+    private var progressTrackColor: Color { isWhiteTheme ? Color.black.opacity(0.1) : Color.white.opacity(0.1) }
+    private var borderGradientColors: [Color] {
+        isWhiteTheme ? [Color.black.opacity(0.2), Color.black.opacity(0.06)] : [Color.white.opacity(0.3), Color.white.opacity(0.05)]
+    }
     
     var body: some View {
         ZStack {
@@ -54,7 +62,7 @@ struct FloatingPillView: View {
         .background(
             ZStack(alignment: .bottom) {
                 VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                Color.black.opacity(0.3)
+                overlayBaseColor
                 
                 // Pulse Effect for Time's Up
                 if timerService.timesUpTriggered {
@@ -84,7 +92,7 @@ struct FloatingPillView: View {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Rectangle()
-                            .fill(Color.white.opacity(0.1))
+                            .fill(progressTrackColor)
                             .frame(height: 3)
                         
                         Rectangle()
@@ -101,14 +109,14 @@ struct FloatingPillView: View {
             RoundedRectangle(cornerRadius: 30)
                 .stroke(
                     LinearGradient(
-                        colors: [.white.opacity(0.3), .white.opacity(0.05)],
+                        colors: borderGradientColors,
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
                     lineWidth: 1
                 )
         )
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(isWhiteTheme ? .light : .dark)
         .onHover { hover in
             withAnimation(.easeInOut(duration: 0.2)) {
                 isHovering = hover
@@ -183,6 +191,11 @@ struct PillControlsView: View {
     @ObservedObject var timerService: TimerService
     @ObservedObject var remindersService: RemindersService
     @ObservedObject var estimateStore: EstimateStore
+    @AppStorage("appTheme") private var appTheme: AppTheme = .glass
+    
+    private var dividerColor: Color {
+        appTheme == .white ? Color.black.opacity(0.2) : Color.white.opacity(0.2)
+    }
     
     var body: some View {
         HStack(spacing: 12) { // Reduced spacing slightly to fit larger touch targets
@@ -219,7 +232,7 @@ struct PillControlsView: View {
                 }
             }
             
-            Divider().frame(height: 16).background(Color.white.opacity(0.2))
+            Divider().frame(height: 16).background(dividerColor)
             
             // EXTEND TIME
             if timerService.timesUpTriggered {
@@ -262,6 +275,11 @@ struct PillControlsView: View {
 struct PillInfoView: View {
     @ObservedObject var timerService: TimerService
     @ObservedObject var remindersService: RemindersService
+    @AppStorage("appTheme") private var appTheme: AppTheme = .glass
+    
+    private var dividerColor: Color {
+        appTheme == .white ? Color.black.opacity(0.2) : Color.white.opacity(0.2)
+    }
     
     var body: some View {
         if timerService.isOnBreak {
@@ -270,7 +288,7 @@ struct PillInfoView: View {
                     .font(.body).fontWeight(.bold)
                     .frame(maxWidth: 180)
                 
-                Divider().frame(height: 16).background(Color.white.opacity(0.2))
+                Divider().frame(height: 16).background(dividerColor)
                 
                 PillTimerDisplay(ticker: timerService.ticker, service: timerService)
             }
@@ -283,7 +301,7 @@ struct PillInfoView: View {
                     .equatable()
                     .frame(maxWidth: 180)
                 
-                Divider().frame(height: 16).background(Color.white.opacity(0.2))
+                Divider().frame(height: 16).background(dividerColor)
                 
                 if timerService.timesUpTriggered {
                     Text("Time's Up")
@@ -367,13 +385,19 @@ struct IconButton: View {
 struct PillTimerDisplay: View {
     @ObservedObject var ticker: TimeTicker
     @ObservedObject var service: TimerService
+    @AppStorage("appTheme") private var appTheme: AppTheme = .glass
     
     var body: some View {
         Text(service.formattedTime())
             .font(.title2).fontWeight(.bold).monospacedDigit()
-            .foregroundColor(service.isOvertime ? .orange : .white)
+            .foregroundColor(timerColor)
             .contentTransition(.numericText(countsDown: !service.isStopwatch && !service.isOvertime))
             .animation(.snappy, value: service.formattedTime())
             .fixedSize()
+    }
+    
+    private var timerColor: Color {
+        if service.isOvertime { return .orange }
+        return appTheme == .white ? Color.black.opacity(0.9) : .white
     }
 }

@@ -161,15 +161,20 @@ struct HelpyApp: App {
         
         let iconName = shouldUseDarkIcon ? "AppIconDark" : "AppIcon"
         let resourceBundle = iconResourceBundle()
+        
+        let iconImage: NSImage?
         if let iconURL = resourceBundle.url(forResource: iconName, withExtension: "icns"),
-           let iconImage = NSImage(contentsOf: iconURL) {
-            NSApplication.shared.applicationIconImage = iconImage
+           let loaded = NSImage(contentsOf: iconURL) {
+            iconImage = loaded
         } else if let iconURL = resourceBundle.url(forResource: iconName, withExtension: "png"),
-                  let iconImage = NSImage(contentsOf: iconURL) {
-            NSApplication.shared.applicationIconImage = iconImage
+                  let loaded = NSImage(contentsOf: iconURL) {
+            iconImage = loaded
         } else {
-            NSApplication.shared.applicationIconImage = nil
+            iconImage = nil
         }
+        
+        NSApplication.shared.applicationIconImage = iconImage
+        persistAppBundleIcon(iconImage)
         
         lastAppliedDarkIconState = shouldUseDarkIcon
     }
@@ -195,8 +200,11 @@ struct HelpyApp: App {
     }
     
     func isSystemDarkModeEnabled() -> Bool {
-        let bestMatch = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
-        return bestMatch == .darkAqua
+        let globalDomain = UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)
+        if let interfaceStyle = globalDomain?["AppleInterfaceStyle"] as? String {
+            return interfaceStyle.caseInsensitiveCompare("Dark") == .orderedSame
+        }
+        return false
     }
     
     func iconResourceBundle() -> Bundle {
@@ -212,5 +220,23 @@ struct HelpyApp: App {
         }
         
         return Bundle.main
+    }
+    
+    func persistAppBundleIcon(_ iconImage: NSImage?) {
+        guard let bundlePath = appBundlePath() else { return }
+        NSWorkspace.shared.setIcon(iconImage, forFile: bundlePath, options: [])
+    }
+    
+    func appBundlePath() -> String? {
+        var url = URL(fileURLWithPath: Bundle.main.bundlePath)
+        
+        while url.path != "/" {
+            if url.pathExtension == "app" {
+                return url.path
+            }
+            url.deleteLastPathComponent()
+        }
+        
+        return nil
     }
 }

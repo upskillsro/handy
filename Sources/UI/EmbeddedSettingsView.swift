@@ -6,6 +6,14 @@ struct EmbeddedSettingsView: View {
     
     let sounds = ["Basso", "Blow", "Bottle", "Frog", "Funk", "Glass", "Hero", "Morse", "Ping", "Pop", "Purr", "Sosumi", "Submarine", "Tink"]
     
+    private var isWhiteTheme: Bool { settings.appTheme == .white }
+    private var dividerColor: Color { isWhiteTheme ? Color.black.opacity(0.12) : Color.white.opacity(0.1) }
+    private var toggleTint: Color { isWhiteTheme ? Color.blue.opacity(0.85) : Color.white.opacity(0.8) }
+    private var menuTextColor: Color { isWhiteTheme ? Color.primary : Color.white }
+    private var sectionHeaderBackground: Color { isWhiteTheme ? Color.black.opacity(0.05) : Color.black.opacity(0.2) }
+    private var sliderAccentColor: Color { isWhiteTheme ? Color.blue : Color.white }
+    private var sliderTrackColor: Color { isWhiteTheme ? Color.black.opacity(0.12) : Color.white.opacity(0.1) }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -22,7 +30,7 @@ struct EmbeddedSettingsView: View {
                 .buttonStyle(.plain)
             }
             .padding()
-            .background(Color.black.opacity(0.2))
+            .background(sectionHeaderBackground)
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
@@ -41,10 +49,14 @@ struct EmbeddedSettingsView: View {
                             ThemePreviewCard(theme: .dark, isSelected: settings.appTheme == .dark) {
                                 settings.appTheme = .dark
                             }
+                            
+                            ThemePreviewCard(theme: .white, isSelected: settings.appTheme == .white) {
+                                settings.appTheme = .white
+                            }
                         }
                     }
                     
-                    Divider().background(Color.white.opacity(0.1))
+                    Divider().background(dividerColor)
                     
                     // PANEL POSITION
                     VStack(alignment: .leading, spacing: 16) {
@@ -53,17 +65,17 @@ struct EmbeddedSettingsView: View {
                             .foregroundColor(.secondary)
                         
                         HStack(spacing: 20) {
-                            PositionPreviewCard(position: .left, isSelected: settings.panelPosition == .left) {
+                            PositionPreviewCard(position: .left, theme: settings.appTheme, isSelected: settings.panelPosition == .left) {
                                 updatePosition(.left)
                             }
                             
-                            PositionPreviewCard(position: .right, isSelected: settings.panelPosition == .right) {
+                            PositionPreviewCard(position: .right, theme: settings.appTheme, isSelected: settings.panelPosition == .right) {
                                 updatePosition(.right)
                             }
                         }
                     }
                     
-                    Divider().background(Color.white.opacity(0.1))
+                    Divider().background(dividerColor)
                     
                     // TIMER SETTINGS
                     VStack(alignment: .leading, spacing: 16) {
@@ -86,20 +98,20 @@ struct EmbeddedSettingsView: View {
                             } label: {
                                 HStack {
                                     Text(formatDuration(settings.breakDuration))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(menuTextColor)
                                         .fontWeight(.medium)
                                     Spacer()
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 8)
                                 .frame(width: 120) // Fixed width for consistent look
-                                .background(GlassyBackground())
+                                .background(GlassyBackground(theme: settings.appTheme))
                             }
                             .menuStyle(.borderlessButton)
                         }
                     }
                     
-                    Divider().background(Color.white.opacity(0.1))
+                    Divider().background(dividerColor)
                     
                     // APP BEHAVIOR
                     VStack(alignment: .leading, spacing: 16) {
@@ -107,11 +119,17 @@ struct EmbeddedSettingsView: View {
                             .font(.headline)
                             .foregroundColor(.secondary)
                         
-                        Toggle("Quit app when closing main window", isOn: $settings.quitOnClose)
-                            .toggleStyle(SwitchToggleStyle(tint: .white.opacity(0.8)))
+                        HStack {
+                            Text("Quit app when closing main window")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Toggle("", isOn: $settings.quitOnClose)
+                                .toggleStyle(SwitchToggleStyle(tint: toggleTint))
+                                .labelsHidden()
+                        }
                     }
                     
-                    Divider().background(Color.white.opacity(0.1))
+                    Divider().background(dividerColor)
                     
                     // TASK ALERTS
                     VStack(alignment: .leading, spacing: 20) {
@@ -121,7 +139,7 @@ struct EmbeddedSettingsView: View {
                                 .foregroundColor(.secondary)
                             Spacer()
                             Toggle("", isOn: $settings.isTaskAlertEnabled)
-                                .toggleStyle(SwitchToggleStyle(tint: .white.opacity(0.8)))
+                                .toggleStyle(SwitchToggleStyle(tint: toggleTint))
                                 .labelsHidden()
                         }
                         
@@ -142,14 +160,14 @@ struct EmbeddedSettingsView: View {
                                     } label: {
                                         HStack {
                                             Text(formatDuration(settings.taskAlertInterval))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(menuTextColor)
                                                 .fontWeight(.medium)
                                             Spacer()
                                         }
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 8)
                                         .frame(width: 120)
-                                        .background(GlassyBackground())
+                                        .background(GlassyBackground(theme: settings.appTheme))
                                     }
                                     .menuStyle(.borderlessButton)
                                 }
@@ -176,14 +194,14 @@ struct EmbeddedSettingsView: View {
                                         } label: {
                                             HStack {
                                                 Text(settings.taskAlertSound)
-                                                    .foregroundColor(.white)
+                                                    .foregroundColor(menuTextColor)
                                                     .fontWeight(.medium)
                                                 Spacer()
                                             }
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 8)
                                             .frame(width: 140)
-                                            .background(GlassyBackground())
+                                            .background(GlassyBackground(theme: settings.appTheme))
                                         }
                                         .menuStyle(.borderlessButton)
                                         
@@ -195,9 +213,9 @@ struct EmbeddedSettingsView: View {
                                         }) {
                                             Image(systemName: "play.fill")
                                                 .font(.system(size: 14))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(menuTextColor)
                                                 .frame(width: 32, height: 32)
-                                                .background(GlassyBackground())
+                                                .background(GlassyBackground(theme: settings.appTheme))
                                         }
                                         .buttonStyle(.plain)
                                     }
@@ -210,10 +228,10 @@ struct EmbeddedSettingsView: View {
                                         .foregroundColor(.secondary)
                                     
                                     Slider(value: $settings.taskAlertVolume, in: 0...1)
-                                        .accentColor(.white)
+                                        .accentColor(sliderAccentColor)
                                         .background(
                                             Capsule()
-                                                .fill(Color.white.opacity(0.1))
+                                                .fill(sliderTrackColor)
                                                 .frame(height: 4)
                                         )
                                     
@@ -226,7 +244,7 @@ struct EmbeddedSettingsView: View {
                         }
                     }
                     
-                    Divider().background(Color.white.opacity(0.1))
+                    Divider().background(dividerColor)
                     
                     // ALERT SETTINGS
                     VStack(alignment: .leading, spacing: 20) {
@@ -236,7 +254,7 @@ struct EmbeddedSettingsView: View {
                                 .foregroundColor(.secondary)
                             Spacer()
                             Toggle("", isOn: $settings.isAlertEnabled)
-                                .toggleStyle(SwitchToggleStyle(tint: .white.opacity(0.8)))
+                                .toggleStyle(SwitchToggleStyle(tint: toggleTint))
                                 .labelsHidden()
                         }
                         
@@ -264,14 +282,14 @@ struct EmbeddedSettingsView: View {
                                         } label: {
                                             HStack {
                                                 Text(settings.alertSound)
-                                                    .foregroundColor(.white)
+                                                    .foregroundColor(menuTextColor)
                                                     .fontWeight(.medium)
                                                 Spacer()
                                             }
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 8)
                                             .frame(width: 140) // Fixed width for consistency
-                                            .background(GlassyBackground())
+                                            .background(GlassyBackground(theme: settings.appTheme))
                                         }
                                         .menuStyle(.borderlessButton)
                                         
@@ -283,9 +301,9 @@ struct EmbeddedSettingsView: View {
                                         }) {
                                             Image(systemName: "play.fill")
                                                 .font(.system(size: 14))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(menuTextColor)
                                                 .frame(width: 32, height: 32)
-                                                .background(GlassyBackground())
+                                                .background(GlassyBackground(theme: settings.appTheme))
                                         }
                                         .buttonStyle(.plain)
                                     }
@@ -298,10 +316,10 @@ struct EmbeddedSettingsView: View {
                                         .foregroundColor(.secondary)
                                     
                                     Slider(value: $settings.alertVolume, in: 0...1)
-                                        .accentColor(.white)
+                                        .accentColor(sliderAccentColor)
                                         .background(
                                             Capsule()
-                                                .fill(Color.white.opacity(0.1))
+                                                .fill(sliderTrackColor)
                                                 .frame(height: 4)
                                         )
                                     
@@ -344,8 +362,36 @@ struct EmbeddedSettingsView: View {
 
 struct PositionPreviewCard: View {
     let position: PanelPosition
+    let theme: AppTheme
     let isSelected: Bool
     let action: () -> Void
+    
+    private var isWhiteTheme: Bool { theme == .white }
+    private var frameStrokeColor: Color { isWhiteTheme ? Color.black.opacity(0.1) : Color.white.opacity(0.1) }
+    private var panelColor: Color {
+        if isSelected {
+            return isWhiteTheme ? Color.blue.opacity(0.9) : Color.white
+        }
+        return Color.primary.opacity(0.5)
+    }
+    private var labelColor: Color {
+        if isSelected {
+            return isWhiteTheme ? .primary : .white
+        }
+        return .secondary
+    }
+    private var cardFillColor: Color {
+        if isWhiteTheme {
+            return isSelected ? Color.black.opacity(0.08) : Color.black.opacity(0.03)
+        }
+        return isSelected ? Color.white.opacity(0.1) : Color.white.opacity(0.05)
+    }
+    private var cardStrokeColor: Color {
+        if isWhiteTheme {
+            return isSelected ? Color.black.opacity(0.25) : Color.black.opacity(0.08)
+        }
+        return isSelected ? Color.white : .clear
+    }
     
     var body: some View {
         Button(action: action) {
@@ -360,14 +406,14 @@ struct PositionPreviewCard: View {
                         .frame(height: 60)
                         .overlay(
                             RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                .stroke(frameStrokeColor, lineWidth: 1)
                         )
                     
                     // The App Panel
                     HStack {
                         if position == .right { Spacer() }
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(isSelected ? Color.white : Color.primary.opacity(0.5))
+                            .fill(panelColor)
                             .frame(width: 16, height: 48)
                             .padding(position == .left ? .leading : .trailing, 6)
                             .shadow(radius: 2)
@@ -379,16 +425,16 @@ struct PositionPreviewCard: View {
                 Text(position == .left ? "Screen Left" : "Screen Right")
                     .font(.caption)
                     .fontWeight(isSelected ? .semibold : .regular)
-                    .foregroundColor(isSelected ? .white : .secondary)
+                    .foregroundColor(labelColor)
             }
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.white.opacity(0.1) : Color.white.opacity(0.05))
+                    .fill(cardFillColor)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.white : Color.clear, lineWidth: 1)
+                    .stroke(cardStrokeColor, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -397,19 +443,35 @@ struct PositionPreviewCard: View {
 }
 
 struct GlassyBackground: View {
+    let theme: AppTheme
+    
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.black.opacity(0.4))
-            
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.thinMaterial)
-                .opacity(0.5)
+            if theme == .white {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white.opacity(0.95))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.black.opacity(0.4))
+                
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.thinMaterial)
+                    .opacity(0.5)
+            }
         }
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(
-                    LinearGradient(
+                    theme == .white
+                    ? LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.black.opacity(0.16),
+                            Color.black.opacity(0.06)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    : LinearGradient(
                         gradient: Gradient(colors: [
                             Color.white.opacity(0.3),
                             Color.white.opacity(0.05)

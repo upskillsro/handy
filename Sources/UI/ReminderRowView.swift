@@ -30,6 +30,31 @@ struct ReminderRowView: View, Equatable {
     private var effectiveHover: Bool {
         return isHovering && !isDraggingAppWide
     }
+    private var isWhiteTheme: Bool { appTheme == .white }
+    private var actionIconColor: Color { isWhiteTheme ? Color.black.opacity(0.78) : Color.white.opacity(0.9) }
+    private var actionAccentColor: Color { isWhiteTheme ? Color.black.opacity(0.7) : Color.white.opacity(0.8) }
+    private var rowDividerColor: Color { isWhiteTheme ? Color.black.opacity(0.12) : Color.white.opacity(0.1) }
+    private var editorBackgroundColor: Color { isWhiteTheme ? Color.black.opacity(0.06) : Color.black.opacity(0.3) }
+    private var rowFillColor: Color {
+        switch appTheme {
+        case .glass:
+            return Color(red: 0.11, green: 0.11, blue: 0.12).opacity(0.18)
+        case .dark:
+            return Color(red: 0.11, green: 0.11, blue: 0.12)
+        case .white:
+            return Color.white.opacity(0.95)
+        }
+    }
+    private var hoverActionsBackgroundColor: Color {
+        switch appTheme {
+        case .glass:
+            return .clear
+        case .dark:
+            return Color(red: 0.11, green: 0.11, blue: 0.12)
+        case .white:
+            return Color.white.opacity(0.98)
+        }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -147,7 +172,7 @@ struct ReminderRowView: View, Equatable {
                             }) {
                                 Image(systemName: "play.fill")
                                     .font(.system(size: 10))
-                                    .foregroundColor(.white.opacity(0.9))
+                                    .foregroundColor(actionIconColor)
                             }
                             .buttonStyle(.plain)
                             .help("Start Timer")
@@ -164,7 +189,7 @@ struct ReminderRowView: View, Equatable {
                             Button(action: { withAnimation { showNotesEdit.toggle() } }) {
                                 Image(systemName: (reminder.notes?.isEmpty ?? true) ? "doc" : "doc.text.fill")
                                     .font(.system(size: 11))
-                                    .foregroundColor((reminder.notes?.isEmpty ?? true) ? .secondary : .white.opacity(0.8))
+                                    .foregroundColor((reminder.notes?.isEmpty ?? true) ? .secondary : actionAccentColor)
                             }
                             .buttonStyle(.plain)
                             
@@ -252,7 +277,7 @@ struct ReminderRowView: View, Equatable {
                         if appTheme == .glass {
                             glassOverlayBase(grainOpacity: 0.05)
                         } else {
-                            Color(red: 0.11, green: 0.11, blue: 0.12)
+                            hoverActionsBackgroundColor
                         }
                     }
                     .mask(
@@ -290,7 +315,7 @@ struct ReminderRowView: View, Equatable {
             // Embedded Editors... (Keep existing code)
             
             if showCalendarEdit {
-                Divider().background(Color.white.opacity(0.1))
+                Divider().background(rowDividerColor)
                 VStack(spacing: 12) {
                     HStack {
                         // Date Group
@@ -375,11 +400,11 @@ struct ReminderRowView: View, Equatable {
                     }
                 }
                 .padding(12)
-                .background(Color.black.opacity(0.3))
+                .background(editorBackgroundColor)
             }
             
             if showNotesEdit {
-                Divider().background(Color.white.opacity(0.1))
+                Divider().background(rowDividerColor)
                 VStack(alignment: .leading, spacing: 8) {
                     TextEditor(text: Binding(
                         get: { reminder.notes ?? "" },
@@ -391,12 +416,12 @@ struct ReminderRowView: View, Equatable {
                     .frame(minHeight: 80)
                 }
                 .padding(12)
-                .background(Color.black.opacity(0.3))
+                .background(editorBackgroundColor)
             }
         }
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(red: 0.11, green: 0.11, blue: 0.12).opacity(appTheme == .glass ? 0.18 : 1.0))
+                .fill(rowFillColor)
                 .shadow(color: .black.opacity(0.3), radius: 6, x: 0, y: 3)
                 // Hover Glow Effect (Colored based on priority)
                 .shadow(color: effectiveHover ? priorityColor(for: reminder.priority).opacity(0.25) : Color.clear, radius: 8, x: 0, y: 0)
