@@ -31,7 +31,6 @@ struct HelpyApp: App {
     @State private var panelPositionObserver: NSObjectProtocol?
     @State private var appearanceObserver: NSObjectProtocol?
     @State private var lastAppliedDarkIconState: Bool?
-    @AppStorage("appTheme") private var appTheme: AppTheme = .glass
     
     init() {
         // Link services
@@ -59,7 +58,7 @@ struct HelpyApp: App {
                     // Apply icon after launch plumbing completes so the Dock icon
                     // doesn't get reset back to the bundle default.
                     DispatchQueue.main.async {
-                        applyAppIcon(theme: resolvedThemeForLaunch())
+                        applySystemAppearanceIcon()
                     }
                     
                     // Position Main Window as Sidebar
@@ -96,9 +95,6 @@ struct HelpyApp: App {
                         DistributedNotificationCenter.default().removeObserver(observer)
                         appearanceObserver = nil
                     }
-                }
-                .onChange(of: appTheme) { _, newTheme in
-                    applyAppIcon(theme: newTheme)
                 }
         }
         .windowStyle(.hiddenTitleBar)
@@ -152,8 +148,8 @@ struct HelpyApp: App {
         window.isMovable = false // Lock position
     }
     
-    func applyAppIcon(theme: AppTheme) {
-        let shouldUseDarkIcon = theme == .dark || isSystemDarkModeEnabled()
+    func applySystemAppearanceIcon() {
+        let shouldUseDarkIcon = isSystemDarkModeEnabled()
         
         if lastAppliedDarkIconState == shouldUseDarkIcon {
             return
@@ -174,7 +170,7 @@ struct HelpyApp: App {
         }
         
         NSApplication.shared.applicationIconImage = iconImage
-        persistAppBundleIcon(iconImage)
+        persistAppBundleIcon(iconImage, iconName: iconName, resourceBundle: resourceBundle)
         
         lastAppliedDarkIconState = shouldUseDarkIcon
     }
@@ -187,24 +183,22 @@ struct HelpyApp: App {
             object: nil,
             queue: .main
         ) { _ in
-            applyAppIcon(theme: resolvedThemeForLaunch())
+            applySystemAppearanceIcon()
         }
-    }
-    
-    func resolvedThemeForLaunch() -> AppTheme {
-        if let savedTheme = UserDefaults.standard.string(forKey: "appTheme"),
-           let parsedTheme = AppTheme(rawValue: savedTheme) {
-            return parsedTheme
-        }
-        return appTheme
     }
     
     func isSystemDarkModeEnabled() -> Bool {
-        let globalDomain = UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)
-        if let interfaceStyle = globalDomain?["AppleInterfaceStyle"] as? String {
+        if let interfaceStyle = CFPreferencesCopyValue(
+            "AppleInterfaceStyle" as CFString,
+            kCFPreferencesAnyApplication,
+            kCFPreferencesCurrentUser,
+            kCFPreferencesAnyHost
+        ) as? String {
             return interfaceStyle.caseInsensitiveCompare("Dark") == .orderedSame
         }
-        return false
+        
+        let bestMatch = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua])
+        return bestMatch == .darkAqua
     }
     
     func iconResourceBundle() -> Bundle {
@@ -222,9 +216,34 @@ struct HelpyApp: App {
         return Bundle.main
     }
     
-    func persistAppBundleIcon(_ iconImage: NSImage?) {
+    func persistAppBundleIcon(_ iconImage: NSImage?, iconName: String, resourceBundle: Bundle) {
         guard let bundlePath = appBundlePath() else { return }
-        NSWorkspace.shared.setIcon(iconImage, forFile: bundlePath, options: [])
+        syncBundleIconFile(iconName: iconName, resourceBundle: resourceBundle, bundlePath: bundlePath)
+        if !NSWorkspace.shared.setIcon(iconImage, forFile: bundlePath, options: []) {
+            _ = NSWorkspace.shared.setIcon(iconImage, forFile: Bundle.main.bundlePath, options: [])
+        }
+        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: bundlePath)
+        NSWorkspace.shared.noteFileSystemChanged(bundlePath)
+    }
+    
+    func syncBundleIconFile(iconName: String, resourceBundle: Bundle, bundlePath: String) {
+        guard
+            let sourceIconURL = resourceBundle.url(forResource: iconName, withExtension: "icns")
+        else { return }
+        
+        let targetIconURL = URL(fileURLWithPath: bundlePath)
+            .appendingPathComponent("Contents")
+            .appendingPathComponent("Resources")
+            .appendingPathComponent("AppIcon.icns")
+        
+        guard let sourceData = try? Data(contentsOf: sourceIconURL) else { return }
+        let existingData = try? Data(contentsOf: targetIconURL)
+        
+        if existingData == sourceData {
+            return
+        }
+        
+        try? sourceData.write(to: targetIconURL, options: .atomic)
     }
     
     func appBundlePath() -> String? {
