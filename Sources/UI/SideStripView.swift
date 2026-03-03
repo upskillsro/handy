@@ -16,11 +16,13 @@ struct SideStripView: View {
     @State private var isSettingsOpen = false
     @State private var settingsStore = SettingsStore() // Local instance for embedded view
     @State private var isHoveringFocusButton = false // Focus Button Hover State
+    @StateObject private var assistantCoordinator = AssistantCoordinator()
     
     // Quick Add State
     @State private var newTaskTitle = ""
     @State private var isPulsing = false // For task alert animation
     @AppStorage("appTheme") private var appTheme: AppTheme = .glass
+    @AppStorage("assistantEnabled") private var assistantEnabled: Bool = true
     
     private let completionCommitDelay: TimeInterval = 0.18
     private let completionAnimation = Animation.interactiveSpring(response: 0.22, dampingFraction: 0.8, blendDuration: 0.1)
@@ -74,149 +76,172 @@ struct SideStripView: View {
     private var listTitleColor: Color { isWhiteTheme ? accentBlue : .primary }
     
     var body: some View {
-        ZStack {
-            if appTheme == .glass {
-                VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                    .ignoresSafeArea()
-            } else {
-                (isWhiteTheme ? Color.white : Color(nsColor: .windowBackgroundColor))
-                    .ignoresSafeArea()
-            }
-            
-            VStack(spacing: 0) {
-                // Header
-                if !isSettingsOpen {
-                    headerView
-                        .background(panelOverlayColor)
-                        .zIndex(1)
-                }
-                
-                // Content Switcher
-                if isSettingsOpen {
-                    EmbeddedSettingsView(settings: settingsStore) {
-                        withAnimation { isSettingsOpen = false }
-                    }
-                    .transition(.move(edge: .trailing))
+        GeometryReader { proxy in
+            ZStack {
+                if appTheme == .glass {
+                    VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
+                        .ignoresSafeArea()
                 } else {
-                    Group {
-                        // Content
-                        if !remindersService.isAccessGranted {
-                            accessDeniedView
-                        } else {
-                            reminderListView
-                        }
-                        
-                        // Quick Add
-                        quickAddView
+                    (isWhiteTheme ? Color.white : Color(nsColor: .windowBackgroundColor))
+                        .ignoresSafeArea()
+                }
+                
+                VStack(spacing: 0) {
+                    // Header
+                    if !isSettingsOpen {
+                        headerView
+                            .background(panelOverlayColor)
                             .zIndex(1)
-                        
-                        // Footer
-                        footerView
-                             .background(panelOverlayColor)
                     }
-                    .transition(.opacity) // Smoother fade transition for content
-                }
-            }
-        }
-        .background(MainWindowAccessor(windowCoordinator: windowCoordinator))
-        .preferredColorScheme(isWhiteTheme ? .light : .dark)
-        .frame(minWidth: 300, maxWidth: 350, maxHeight: .infinity)
-        .onAppear {
-            prewarmPillWindowIfNeeded()
-        }
-        .onChange(of: timerService.isFocusMode) { _, isFocus in
-            if isFocus {
-                // Enter Focus: show/reuse pill first, then hide main window.
-                if windowCoordinator.pillWindow == nil,
-                   let existingPill = NSApp.windows.first(where: { $0.identifier == AppWindowCoordinator.pillWindowIdentifier }) {
-                    windowCoordinator.pillWindow = existingPill
-                }
-                
-                if windowCoordinator.pillWindow == nil {
-                    openWindow(id: "timer-pill")
-                }
-                
-                // Poll for Pill Window and animate the transition only when it is ready.
-                func animatePillIn(attempts: Int = 0) {
-                    Task { @MainActor in
-                        if let pillWindow = windowCoordinator.pillWindow {
-                            // Ensure window chrome is stripped before first visible frame.
-                            pillWindow.isOpaque = false
-                            pillWindow.backgroundColor = .clear
-                            pillWindow.identifier = AppWindowCoordinator.pillWindowIdentifier
-                            pillWindow.titleVisibility = .hidden
-                            pillWindow.titlebarAppearsTransparent = true
-                            pillWindow.styleMask = [.borderless, .fullSizeContentView]
-                            pillWindow.standardWindowButton(.closeButton)?.isHidden = true
-                            pillWindow.standardWindowButton(.miniaturizeButton)?.isHidden = true
-                            pillWindow.standardWindowButton(.zoomButton)?.isHidden = true
-                            pillWindow.level = .floating
-                            pillWindow.isMovableByWindowBackground = true
-                            
-                            pillWindow.alphaValue = 0
-                            pillWindow.makeKeyAndOrderFront(nil)
-                            NSAnimationContext.runAnimationGroup { context in
-                                context.duration = 0.3
-                                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                                pillWindow.animator().alphaValue = 1
+                    
+                    // Content Switcher
+                    if isSettingsOpen {
+                        EmbeddedSettingsView(settings: settingsStore) {
+                            withAnimation { isSettingsOpen = false }
+                        }
+                        .transition(.move(edge: .trailing))
+                    } else {
+                        Group {
+                            // Content
+                            if !remindersService.isAccessGranted {
+                                accessDeniedView
+                            } else {
+                                reminderListView
                             }
                             
-                            let windowsToHide = NSApp.windows.filter { $0 !== pillWindow && $0.isVisible }
-                            windowsToHide.forEach { window in
+                            // Quick Add
+                            quickAddView
+                                .zIndex(1)
+                            
+                            // Footer
+                            footerView
+                                 .background(panelOverlayColor)
+                        }
+                        .transition(.opacity) // Smoother fade transition for content
+                    }
+                }
+
+                if assistantEnabled && assistantCoordinator.isPanelPresented && !isSettingsOpen {
+                    VStack {
+                        Spacer()
+                        AssistantPanel(
+                            coordinator: assistantCoordinator,
+                            theme: appTheme,
+                            onClose: {
+                                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                                    assistantCoordinator.isPanelPresented = false
+                                }
+                            },
+                            availableHeight: proxy.size.height
+                        )
+                        .padding(.horizontal, 7)
+                        .padding(.bottom, 10)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    .zIndex(3)
+                }
+            }
+            .background(MainWindowAccessor(windowCoordinator: windowCoordinator))
+            .preferredColorScheme(isWhiteTheme ? .light : .dark)
+            .frame(minWidth: 300, maxWidth: 350, maxHeight: .infinity)
+            .onAppear {
+                assistantCoordinator.remindersService = remindersService
+                prewarmPillWindowIfNeeded()
+            }
+            .onChange(of: timerService.isFocusMode) { _, isFocus in
+                if isFocus {
+                    // Enter Focus: show/reuse pill first, then hide main window.
+                    if windowCoordinator.pillWindow == nil,
+                       let existingPill = NSApp.windows.first(where: { $0.identifier == AppWindowCoordinator.pillWindowIdentifier }) {
+                        windowCoordinator.pillWindow = existingPill
+                    }
+                    
+                    if windowCoordinator.pillWindow == nil {
+                        openWindow(id: "timer-pill")
+                    }
+                    
+                    // Poll for Pill Window and animate the transition only when it is ready.
+                    func animatePillIn(attempts: Int = 0) {
+                        Task { @MainActor in
+                            if let pillWindow = windowCoordinator.pillWindow {
+                                // Ensure window chrome is stripped before first visible frame.
+                                pillWindow.isOpaque = false
+                                pillWindow.backgroundColor = .clear
+                                pillWindow.identifier = AppWindowCoordinator.pillWindowIdentifier
+                                pillWindow.titleVisibility = .hidden
+                                pillWindow.titlebarAppearsTransparent = true
+                                pillWindow.styleMask = [.borderless, .fullSizeContentView]
+                                pillWindow.standardWindowButton(.closeButton)?.isHidden = true
+                                pillWindow.standardWindowButton(.miniaturizeButton)?.isHidden = true
+                                pillWindow.standardWindowButton(.zoomButton)?.isHidden = true
+                                pillWindow.level = .floating
+                                pillWindow.isMovableByWindowBackground = true
+                                
+                                pillWindow.alphaValue = 0
+                                pillWindow.makeKeyAndOrderFront(nil)
                                 NSAnimationContext.runAnimationGroup { context in
-                                    context.duration = 0.2
+                                    context.duration = 0.3
                                     context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                                    window.animator().alphaValue = 0
-                                } completionHandler: {
-                                    window.orderOut(nil)
-                                    window.alphaValue = 1
+                                    pillWindow.animator().alphaValue = 1
+                                }
+                                
+                                let windowsToHide = NSApp.windows.filter { $0 !== pillWindow && $0.isVisible }
+                                windowsToHide.forEach { window in
+                                    NSAnimationContext.runAnimationGroup { context in
+                                        context.duration = 0.2
+                                        context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                                        window.animator().alphaValue = 0
+                                    } completionHandler: {
+                                        window.orderOut(nil)
+                                        window.alphaValue = 1
+                                    }
+                                }
+                            } else if attempts < 20 {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                    animatePillIn(attempts: attempts + 1)
                                 }
                             }
-                        } else if attempts < 20 {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                                animatePillIn(attempts: attempts + 1)
-                            }
                         }
                     }
-                }
-                animatePillIn()
-                
-            } else {
-                // Exit Focus: Cross-fade (Pill OUT, Main IN)
-                let pillWindow = windowCoordinator.pillWindow ?? NSApp.windows.first(where: { $0.identifier == AppWindowCoordinator.pillWindowIdentifier })
-                let mainWindow = windowCoordinator.mainWindow ?? NSApp.windows.first(where: { $0.identifier == AppWindowCoordinator.mainWindowIdentifier })
-                
-                // Prepare Main Window
-                if let main = mainWindow {
-                    windowCoordinator.mainWindow = main
-                    main.alphaValue = 0
-                    main.makeKeyAndOrderFront(nil)
-                    main.setIsVisible(true)
-                    NSApp.activate(ignoringOtherApps: true)
-                }
-                
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = 0.3
-                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                    animatePillIn()
                     
-                    // Animate Pill OUT
-                    pillWindow?.animator().alphaValue = 0
+                } else {
+                    // Exit Focus: Cross-fade (Pill OUT, Main IN)
+                    let pillWindow = windowCoordinator.pillWindow ?? NSApp.windows.first(where: { $0.identifier == AppWindowCoordinator.pillWindowIdentifier })
+                    let mainWindow = windowCoordinator.mainWindow ?? NSApp.windows.first(where: { $0.identifier == AppWindowCoordinator.mainWindowIdentifier })
                     
-                    // Animate Main IN
-                    mainWindow?.animator().alphaValue = 1
+                    // Prepare Main Window
+                    if let main = mainWindow {
+                        windowCoordinator.mainWindow = main
+                        main.alphaValue = 0
+                        main.makeKeyAndOrderFront(nil)
+                        main.setIsVisible(true)
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
                     
-                } completionHandler: {
-                    // Keep the same pill window instance and just hide it; this avoids
-                    // titlebar/chrome glitches when a brand-new window is recreated.
-                    pillWindow?.orderOut(nil)
-                    pillWindow?.alphaValue = 1
+                    NSAnimationContext.runAnimationGroup { context in
+                        context.duration = 0.3
+                        context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                        
+                        // Animate Pill OUT
+                        pillWindow?.animator().alphaValue = 0
+                        
+                        // Animate Main IN
+                        mainWindow?.animator().alphaValue = 1
+                        
+                    } completionHandler: {
+                        // Keep the same pill window instance and just hide it; this avoids
+                        // titlebar/chrome glitches when a brand-new window is recreated.
+                        pillWindow?.orderOut(nil)
+                        pillWindow?.alphaValue = 1
+                    }
                 }
             }
-        }
-        .onChange(of: timerService.activeReminderId) { _, newValue in
-            // Only exit focus mode if we are NOT on a break
-            if newValue == nil && timerService.isFocusMode && !timerService.isOnBreak {
-                timerService.isFocusMode = false
+            .onChange(of: timerService.activeReminderId) { _, newValue in
+                // Only exit focus mode if we are NOT on a break
+                if newValue == nil && timerService.isFocusMode && !timerService.isOnBreak {
+                    timerService.isFocusMode = false
+                }
             }
         }
     }
@@ -715,31 +740,42 @@ struct SideStripView: View {
     }
     
     var quickAddView: some View {
-        HStack {
+        HStack(spacing: 10) {
             Image(systemName: "plus")
                 .foregroundColor(.secondary)
             TextField("Add task...", text: $newTaskTitle)
                 .textFieldStyle(.plain)
                 .onSubmit {
                     guard !newTaskTitle.isEmpty else { return }
-                    // Create task in the currently selected list
                     let selectedCalendar = remindersService.lists.first(where: { $0.calendarIdentifier == remindersService.activeListId })
-                    
+
                     var dueDate: DateComponents? = nil
                     if remindersService.activeListId == nil {
                          dueDate = Calendar.current.dateComponents([.year, .month, .day], from: Date())
                     }
-                    
+
                     remindersService.createReminder(title: newTaskTitle, in: selectedCalendar, dueDate: dueDate)
                     newTaskTitle = ""
                 }
+
+            if assistantEnabled && !assistantCoordinator.isPanelPresented {
+                AssistantLauncherButton(
+                    isOpen: assistantCoordinator.isPanelPresented,
+                    action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            assistantCoordinator.togglePanel()
+                        }
+                    },
+                    theme: appTheme
+                )
+            }
         }
         .padding(12)
         .background(
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(quickAddFillColor)
-                
+
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.thinMaterial)
                     .opacity(quickAddMaterialOpacity)
@@ -750,7 +786,7 @@ struct SideStripView: View {
                 .stroke(quickAddBorderColor, lineWidth: 1)
         )
         .padding(.horizontal, 7)
-        .padding(.top, 8) // Added top padding as requested
+        .padding(.top, 8)
         .padding(.bottom, 8)
     }
     

@@ -7,4 +7,7 @@ enum AppLogger {
     static let reminders = Logger(subsystem: subsystem, category: "RemindersService")
     static let timer = Logger(subsystem: subsystem, category: "TimerService")
     static let estimate = Logger(subsystem: subsystem, category: "EstimateStore")
+    static let assistant = Logger(subsystem: subsystem, category: "Assistant")
+    static let transcription = Logger(subsystem: subsystem, category: "Transcription")
+    static let ollama = Logger(subsystem: subsystem, category: "Ollama")
 }

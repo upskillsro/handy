@@ -130,6 +130,17 @@ struct EmbeddedSettingsView: View {
                     }
                     
                     Divider().background(dividerColor)
+
+                    // ASSISTANT
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Assistant")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+
+                        AssistantSettingsControls(settings: settings, theme: settings.appTheme)
+                    }
+                    
+                    Divider().background(dividerColor)
                     
                     // TASK ALERTS
                     VStack(alignment: .leading, spacing: 20) {
@@ -344,7 +355,7 @@ struct EmbeddedSettingsView: View {
         settings.panelPosition = pos
         NotificationCenter.default.post(name: NSNotification.Name("UpdatePanelPosition"), object: nil)
     }
-    
+
     func formatDuration(_ seconds: Double) -> String {
         let min = Int(seconds) / 60
         return "\(min) min"

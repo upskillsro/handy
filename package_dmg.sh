@@ -152,6 +152,8 @@ cat <<EOF > "$APP_NAME.app/Contents/Info.plist"
     <string>Helpy needs access to your reminders to help you stay on task.</string>
     <key>NSCalendarsUsageDescription</key>
     <string>Helpy needs access to your calendar events.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Helpy needs microphone access to record voice notes for local task transcription.</string>
 </dict>
 </plist>
 EOF

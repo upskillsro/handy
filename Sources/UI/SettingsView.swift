@@ -55,6 +55,10 @@ struct GeneralSettingsView: View {
             Section("App Behavior") {
                 Toggle("Quit app when closing main window", isOn: $settings.quitOnClose)
             }
+
+            Section("Assistant") {
+                AssistantSettingsControls(settings: settings, theme: nil)
+            }
             
             // ALERT SETTINGS
             Section("Time's Up Alert") {

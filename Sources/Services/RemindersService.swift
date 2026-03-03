@@ -205,6 +205,31 @@ class RemindersService: ObservableObject {
             AppLogger.reminders.error("Failed to update due date: \(String(describing: error), privacy: .public)")
         }
     }
+
+    func dateComponents(from schedule: AssistantScheduleDraft?) -> DateComponents? {
+        schedule?.resolvedDateComponents(calendar: .current)
+    }
+
+    func updateSchedule(_ reminder: EKReminder, schedule: AssistantScheduleDraft?) {
+        let newComponents = dateComponents(from: schedule)
+        guard reminder.dueDateComponents != newComponents else { return }
+
+        reminder.dueDateComponents = newComponents
+
+        if let absoluteDate = schedule?.resolvedDate(calendar: .current) {
+            let alarm = EKAlarm(absoluteDate: absoluteDate)
+            reminder.alarms = [alarm]
+        } else {
+            reminder.alarms = []
+        }
+
+        do {
+            try store.save(reminder, commit: true)
+            fetchReminders()
+        } catch {
+            AppLogger.reminders.error("Failed to update schedule: \(String(describing: error), privacy: .public)")
+        }
+    }
     
     func updatePriority(_ reminder: EKReminder, priority: Int) {
         // EKReminder priority: 0 (None), 1-4 (High), 5 (Medium), 6-9 (Low)
@@ -253,6 +278,106 @@ class RemindersService: ObservableObject {
             fetchReminders() // Fetch will handle appending to sort order
         } catch {
             AppLogger.reminders.error("Failed to create reminder: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    func createReminder(from draft: TaskDraft, in calendar: EKCalendar? = nil) {
+        createReminders(from: [draft], in: calendar)
+    }
+
+    func createReminders(from drafts: [TaskDraft], in calendar: EKCalendar? = nil) {
+        let validDrafts = drafts.filter { !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard !validDrafts.isEmpty else { return }
+
+        for draft in validDrafts {
+            let reminder = EKReminder(eventStore: store)
+            reminder.title = draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            reminder.calendar = calendar ?? store.defaultCalendarForNewReminders()
+            reminder.priority = draft.priority
+
+            if let scheduleComponents = dateComponents(from: draft.schedule) {
+                reminder.dueDateComponents = scheduleComponents
+            }
+
+            do {
+                try store.save(reminder, commit: false)
+            } catch {
+                AppLogger.reminders.error("Failed to stage assistant reminder: \(String(describing: error), privacy: .public)")
+            }
+        }
+
+        do {
+            try store.commit()
+            fetchReminders()
+        } catch {
+            AppLogger.reminders.error("Failed to commit assistant reminders: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    func reminder(withId id: String) -> EKReminder? {
+        if let reminder = reminders.first(where: { $0.calendarItemIdentifier == id }) {
+            return reminder
+        }
+        return recentCompletedReminders.first(where: { $0.calendarItemIdentifier == id })
+    }
+
+    func buildAssistantContext() -> [AssistantReminderContext] {
+        reminders.enumerated().map { index, reminder in
+            AssistantReminderContext(
+                id: reminder.calendarItemIdentifier,
+                title: reminder.title,
+                dueDate: reminder.dueDateComponents?.date,
+                priority: reminder.priority,
+                isCompleted: reminder.isCompleted,
+                position: index + 1
+            )
+        }
+    }
+
+    func moveReminder(withId id: String, toPosition position: Int) {
+        let zeroBasedDestination = max(position - 1, 0)
+        moveReminder(withId: id, toIndex: min(zeroBasedDestination, reminders.count))
+    }
+
+    func applyAssistantAction(_ action: AssistantActionDraft, in calendar: EKCalendar? = nil) throws {
+        switch action.kind {
+        case .create:
+            guard let title = action.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return }
+            createReminder(from: TaskDraft(title: title, schedule: action.schedule ?? .empty, priority: action.priority ?? 0), in: calendar)
+        case .update:
+            guard let targetId = action.targetReminderId,
+                  let reminder = reminder(withId: targetId) else {
+                throw AssistantError.actionTargetNotFound(action.targetReminderTitle ?? action.title ?? "Unknown")
+            }
+            if let title = action.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty {
+                updateTitle(reminder, newTitle: title)
+            }
+            if let schedule = action.schedule {
+                updateSchedule(reminder, schedule: schedule)
+            }
+            if let priority = action.priority {
+                updatePriority(reminder, priority: priority)
+            }
+        case .delete:
+            guard let targetId = action.targetReminderId,
+                  let reminder = reminder(withId: targetId) else {
+                throw AssistantError.actionTargetNotFound(action.targetReminderTitle ?? "Unknown")
+            }
+            deleteReminder(reminder)
+        case .complete:
+            guard let targetId = action.targetReminderId,
+                  let reminder = reminder(withId: targetId) else {
+                throw AssistantError.actionTargetNotFound(action.targetReminderTitle ?? "Unknown")
+            }
+            let shouldBeCompleted = action.completed ?? true
+            if reminder.isCompleted != shouldBeCompleted {
+                toggleComplete(reminder)
+            }
+        case .reorder:
+            guard let targetId = action.targetReminderId else {
+                throw AssistantError.actionTargetNotFound(action.targetReminderTitle ?? "Unknown")
+            }
+            moveReminder(withId: targetId, toPosition: action.newPosition ?? 1)
         }
     }
     
